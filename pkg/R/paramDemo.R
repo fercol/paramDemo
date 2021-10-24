@@ -10,6 +10,9 @@
 # COMMENTS: Created a function to calculate CIs of life table elements and
 #           plotting functions for life tables and life table CIs.
 # ============================ START CODE ==================================== #
+# ============================= #
+# ==== INTERNAL FUNCTIONS: ====
+# ============================= #
 # ---------------------------------------- #
 # VERIFY AND EXTRACT PARAMETER ATTRIBUTES:
 # ---------------------------------------- #
@@ -635,7 +638,6 @@
   return(MRDTout)
 }
 
-
 # ------------------------- #
 # PACE AND SHAPE FUNCTIONS:
 # ------------------------- #
@@ -684,9 +686,12 @@
   return(ceiling(xTest[idBound - 1]))
 }
 
-# --------------- #
-# USER FUNCTIONS:
-# --------------- #
+# ========================= #
+# ==== USER FUNCTIONS: ====
+# ========================= #
+# --------------------------- #
+# BASIC PARAMETRIC FUNCTIONS: 
+# --------------------------- #
 # Calculate mortality:
 CalcMort <- function(theta, x, model = "GO", shape = "simple",
                      checkTheta = TRUE) {
@@ -762,6 +767,9 @@ Calcfert <- function(beta, x, modelFert = "M1", checkBeta = TRUE) {
   return(fertfun)
 }
 
+# --------------------------------------------- #
+# ---- GENERAL PARAMETRIC DEMOGRAPHIC FUNCTION: 
+# --------------------------------------------- #
 # Main demographic function:
 CalcDemo <- function(theta = NULL, beta = NULL, x = NULL, dx = NULL, 
                      model = "GO", shape = "simple", modelFert = "M1", 
@@ -948,11 +956,234 @@ CalcDemo <- function(theta = NULL, beta = NULL, x = NULL, dx = NULL,
   # III) CREATE OUTPUT OBJECT: 
   # ========================== #
   outList <- list(surv = survList, fert = fertList)
-  class(outList) <- ifelse(SURV & FERT, "demoBoth", 
-                           ifelse(SURV, "demoSurv", "demoFert"))
+  class(outList) <- c("paramDemo", ifelse(SURV & FERT, "demoBoth", 
+                                          ifelse(SURV, "demoSurv", "demoFert")))
   return(outList)
 }
 
+# Plotting demographic object:
+plot.paramDemo <- function(x, demofun = "all", ...) {
+  # Additional arguments:
+  args <- list(...)
+  
+  # Labels for demographic rates:
+  if (inherits(x, "demoBoth")) {
+    demoFun <- c("mort", "surv", "pdf", "fert")
+  } else if (inherits(x, "demoSurv")) {
+    demoFun <- c("mort", "surv", "pdf")
+  } else {
+    demoFun <- "fert"
+    demofun <- "fert"
+  }
+  
+  # number of demoFun:
+  nDemo <- length(demoFun)
+  
+  # Check if demofun is properly provided:
+  if (inherits(x, "demoBoth") | inherits(x, "demoSurv")) {
+    if (!demofun %in% c(demoFun, "all")) {
+      stop(sprintf("Argument 'demofun' incorrect, values should be\n%s", 
+                   paste(sprintf("'%s'", c(demoFun, "all")), collapse = ", ")), 
+           call. = FALSE)
+    }
+  } else {
+    if (demofun != "fert") {
+      warning("Argument 'demofun' incorrect, value should be 'fert'.", 
+              call. = FALSE)
+    }
+  }
+  
+  # Plot names for demographic rates:
+  demoFunNames <- c(mort = expression(paste("Mortality, ", mu, "(", 
+                                            italic(x), ")")),
+                    surv = expression(paste("Survival, ", italic(S), "(", 
+                                            italic(x), ")")), 
+                    pdf = expression(paste("PDF of ages at death, ", italic(f), 
+                                           "(", italic(x), ")")),
+                    fert = expression(paste("Fertility, ", italic(m), "(", 
+                                            italic(x), ")")))
+  # mar values:
+  if ("mar" %in% names(args)) {
+    mar <- args$mar
+  } else {
+    mar <- c(2, 4, 1, 1)
+  }
+  
+  # Axis labels:
+  if ("xlab" %in% names(args)) {
+    xlab <- args$xlab
+  } else {
+    xlab <- expression(paste("Age, ", italic(x)))
+  }
+  if ("ylab" %in% names(args)) {
+    ylab <- args$ylab
+    if (demofun == "all" & length(ylab) != nDemo) {
+      stop(sprintf("Argument 'ylab' should be of length %s for demofun = 'all'.\nNote functions plotted will be %s.", nDemo, 
+                   paste(sprintf("'%s'", demoFun), collapse = ", ")), 
+           call. = FALSE)
+    }
+  } else {
+    if (demofun == "all") {
+      ylab <- demoFunNames
+    } else {
+      ylab <- demoFunNames[demofun]
+    }
+  }
+  
+  # Type of line:
+  if ("type" %in% names(args)) {
+    type <- args$type
+  } else {
+    type <- "l"
+  }
+  
+  # Color
+  if ("col" %in% names(args)) {
+    col <- args$col
+  } else {
+    col <- "#800026"
+  }
+  
+  # Line width:
+  if ("lwd" %in% names(args)) {
+    lwd <- args$lwd
+  } else {
+    lwd <- 1
+  }
+  
+  # Cex.lab:
+  if ("cex.lab" %in% names(args)) {
+    cex.lab <- args$cex.lab
+  } else {
+    cex.lab <- 1
+  }
+  
+  # Cex.axis:
+  if ("cex.axis" %in% names(args)) {
+    cex.axis <- args$cex.axis
+  } else {
+    cex.axis <- 1
+  }
+  
+  # Produce plots:
+  op <- par(no.readonly = TRUE)
+  
+  if (demofun == "all") {
+    # -------------- #
+    # MULTIPLE PLOTS:
+    # -------------- #
+    # Plot layout settings:
+    if (inherits(x, "demoBoth")) {
+      # Layout matrix:
+      laymat <- cbind(c(2, 4, 1), c(3, 5, 1))
+      
+      # Widths and heights:
+      widths <- c(1, 1)
+      heights <- c(1, 1, 0.15)
+    } else if (inherits(x, "demoSurv")) {
+      # Layout matrix:
+      laymat <- matrix(c(2, 3, 4, 1), ncol = 1)
+      
+      # Widths and heights:
+      widths <- 1
+      heights <- c(1, 1, 1, 0.15)
+    }
+    
+    
+    # produce plot:
+    layout(mat = laymat, widths = widths, heights = heights)
+    
+    # x-axis label:
+    par(mar = mar * c(0, 1, 0, 1))
+    plot(c(0, 1), c(0, 1), col = NA, xlab = "", ylab = "", axes = FALSE)
+    text(0.5, 0.5, xlab, cex = 1.5 * cex.lab)
+    
+    par(mar = mar) 
+    for (dr in demoFun) {
+      if (dr == "fert") {
+        agev <- x$fert$functs$age
+        ydr <- x$fert$functs$fert
+      } else {
+        agev <- x$surv$functs$age
+        ydr <- x$surv$functs[[dr]]
+      }
+      nage <- length(agev)
+      if ("xlim" %in% names(args)) {
+        xlim <- args$xlim
+      } else {
+        xlim <- range(agev) * c(0, 1.1)
+      }
+      if ("ylim" %in% names(args)) {
+        ylim <- args$ylim
+      } else {
+        if (dr == "surv") {
+          ylim <- c(0, 1)
+        } else {
+          ylim <- c(0, max(ydr))
+        }
+      }
+      plot(xlim, ylim, col = NA, axes = FALSE, xlab = "", ylab = "")
+      lines(agev, ydr, type = type, col = col, lwd = lwd)
+      Axis(xlim, side = 1, pos = ylim[1], cex.axis = cex.axis)
+      Axis(ylim, side = 2, pos = xlim[1], las = 2, cex.axis = cex.axis)
+      mtext(ylab[dr], side = 2, line = mar[2] / 2, cex = cex.lab)
+    }    
+  } else {
+    # ------------ #
+    # SINGLE PLOT:
+    # ------------ #
+    dr <- demofun
+    # Layout matrix:
+    laymat <- matrix(c(2, 1), nrow = 2, ncol = 1)
+    
+    # Widths and heights:
+    widths <- c(1)
+    heights <- c(1, 0.15)
+    
+    # produce plot:
+    layout(mat = laymat, widths = widths, heights = heights)
+    
+    # x-axis label:
+    par(mar = mar * c(0, 1, 0, 1))
+    plot(c(0, 1), c(0, 1), col = NA, xlab = "", ylab = "", axes = FALSE)
+    # text(0.5, 0.5, xlab, cex = 1.5 * cex.lab)
+    mtext(xlab, side = 3, line = -2, cex = cex.lab)
+    
+    par(mar = mar) 
+    if (dr == "fert") {
+      agev <- x$fert$functs$age
+      ydr <- x$fert$functs$fert
+    } else {
+      agev <- x$surv$functs$age
+      ydr <- x$surv$functs[[dr]]
+    }
+    nage <- length(agev)
+    if ("xlim" %in% names(args)) {
+      xlim <- args$xlim
+    } else {
+      xlim <- range(agev) * c(0, 1.1)
+    }
+    if ("ylim" %in% names(args)) {
+      ylim <- args$ylim
+    } else {
+      if (dr == "surv") {
+        ylim <- c(0, 1)
+      } else {
+        ylim <- c(0, max(ydr))
+      }
+    }
+    plot(xlim, ylim, col = NA, axes = FALSE, xlab = "", ylab = "")
+    
+    lines(agev, ydr, type = type, col = col, lwd = lwd)
+    Axis(xlim, side = 1, pos = ylim[1], cex.axis = cex.axis)
+    Axis(ylim, side = 2, pos = xlim[1], las = 2, cex.axis = cex.axis)
+    mtext(ylab, side = 2, line = mar[2] / 2, cex = cex.lab)
+  }
+}
+
+# --------------------------------------------------- #
+# SUMMARY STATISTICS AND OTHER DEMOGRAPHIC VARIABLES:
+# --------------------------------------------------- #
 # Function to calculate remaining life expectancy:
 CalcRemainLifeExp <- function(theta, x = NULL, dx = NULL, xmax = NULL,
                               atAllAges = FALSE, model = "GO", shape = "simple",
@@ -1044,34 +1275,10 @@ CalcAgeingRate <- function(theta, x, model = "GO", shape = "simple",
   return(ar)
 }
 
-# Age-specific survival probability:
-CalcSurvProbs <- function(demo, dx = 1) {
-  if (class(demo) != "demoSurv") {
-    stop("Object 'demo' should be of class 'demoSurv'.\nCreate object demo with function CalcDemo().", call. = FALSE)
-  }
-  if (length(demo$age) == 1) {
-    stop("Age-specific probabilities cannot be calculated from a single age.\nIncrease the age vector on CalcDemo().", call. = FALSE)
-
-  }
-  x <- demo$age
-  mux <- demo$mort
-  cumh <- demo$cumhaz
-  Sx <- demo$surv
-  xdis <- x[which(x %in% 0:max(x))]
-  idAges <- which(x %in% xdis)
-  nAges <- length(idAges)
-  px <- Sx[idAges[-1]] / Sx[idAges[-nAges]]
-  qx <- 1 - px
-  lx <- Sx[idAges[-nAges]]
-  demoProbs <- cbind(age = xdis[-nAges], px, qx, lx)
-  class(demoProbs) <- "demoProbs"
-  return(demoProbs)
-}
-
 # Calculate age at maximum Fertility:
 CalcAgeMaxFert <- function(beta, modelFert = "M1", ageMatur = 0, 
                            maxAge = 100) {
-
+  
   # Verify fertility model:
   .VerifyFertMod(modelFert = modelFert)
   
@@ -1083,7 +1290,7 @@ CalcAgeMaxFert <- function(beta, modelFert = "M1", ageMatur = 0,
   .CalcFert <- function(beta, ...) UseMethod(".CalcFert")
   .CalcFert.matrix <- .DefineFertilityMatrix(modelFert = modelFert)
   .CalcFert.numeric <- .DefineFertilityNumeric(modelFert = modelFert)
-
+  
   # Find age at maximum Fertility:
   xv <- seq(0, maxAge - ageMatur, 0.0001)
   if (modelFert == "M1") {
@@ -1150,93 +1357,61 @@ CalcAgeMaxFert <- function(beta, modelFert = "M1", ageMatur = 0,
   return(maxFertv)
 }
 
-# Sampling random ages at death:
-SampleRandAge <- function(n, theta, dx = 0.001, model = "GO", shape = "simple",
-                          minSx = 0.0001) {
-
-  # Extract demographic functions:
-  demo <- CalcDemo(theta, dx = dx, model = model, shape = shape, minSx = minSx,
-                   summarStats = FALSE)
-
-  # Extract CDF of ages at death:
-  Fx <- 1 - demo$surv
-
-  # Draw random uniform values:
-  u <- runif(n)
-
-  # Extract ages for Fx = u:
-  uages <- demo$age[findInterval(u, Fx, rightmost.closed = TRUE)]
-
-  # return random ages:
-  return(uages)
-}
-
-# survival and average adult survival:
-FindSilerPars <- function(theta, palpha) {
-  theta[c(2, 3, 5)] <- abs(theta[c(2, 3, 5)])
-
-  # Extract mortality, survival, etc:
-  demotest <- CalcDemo(theta = theta, shape = "bathtub", minSx = 0.00001)
-
-  # Vector of demographic variables:
-  paltest <- c(CalcAveDemo(demotest), omega = max(demotest$age))
-
-  # max alpha:
-  alphaMax <- max(paltest[3], palpha[3])
-
-  # Scale alpha's:
-  paltest[3] <- paltest[3] / alphaMax
-  palpha[3] <- palpha[3] / alphaMax
-
-  # max maxAge:
-  omegaMax <- max(paltest[4], palpha[4])
-
-  # Scale max age:
-  paltest[4] <- paltest[4] / omegaMax
-  palpha[4] <- palpha[4] / omegaMax
-
-  # Difference between
-  diffpa <- palpha - paltest
-
-  return(sum(diffpa^2))
-}
-
-# Recursive optimization function:
-myoptim <- function(par, fn, ...) {
-  opt1 <- optim(par = par, fn = fn, ...)
-  ntry <- 0
-  while(opt1$convergence != 0 & ntry < 50) {
-    ntry <- ntry + 1
-    opt1 <- optim(par = opt1$par, fn = fn, ...)
+# ---------------------------------------- #
+# DISCRETE AGE OR STAGE DEMOGRAPHIC RATES:
+# ---------------------------------------- #
+# Age-specific survival probability:
+CalcSurvProbs <- function(demo, dx = 1) {
+  if (class(demo) != "demoSurv") {
+    stop("Object 'demo' should be of class 'demoSurv'.\nCreate object demo with function CalcDemo().", call. = FALSE)
   }
-  return(opt1)
+  if (length(demo$age) == 1) {
+    stop("Age-specific probabilities cannot be calculated from a single age.\nIncrease the age vector on CalcDemo().", call. = FALSE)
+
+  }
+  x <- demo$age
+  mux <- demo$mort
+  cumh <- demo$cumhaz
+  Sx <- demo$surv
+  xdis <- x[which(x %in% 0:max(x))]
+  idAges <- which(x %in% xdis)
+  nAges <- length(idAges)
+  px <- Sx[idAges[-1]] / Sx[idAges[-nAges]]
+  qx <- 1 - px
+  lx <- Sx[idAges[-nAges]]
+  demoProbs <- cbind(age = xdis[-nAges], px, qx, lx)
+  class(demoProbs) <- "demoProbs"
+  return(demoProbs)
 }
 
 # Extract average juvenile and adult vital rates:
 CalcAveDemo <- function(demo) {
-
+  
   # Find life table probabilities
   probs <- CalcProbs(demo)
-
+  
   # Find age at minimum mortality:
   alpha <- floor(demo$age[which(demo$mort == min(demo$mort))])
-
+  
   # Indices of adult and juvenile ages:
   idjuv <- which(probs[, "age"] < alpha)
   idad <- which(probs[, "age"] >= alpha)
-
+  
   # Calculate average survival for juvs and ads:
   pj <- sum(probs[idjuv, "px"] * probs[idjuv, "lx"]) /
     sum(probs[idjuv, "lx"])
   pa <- sum(probs[idad, "px"] * probs[idad, "lx"]) / sum(probs[idad, "lx"])
-
+  
   # Vector of demographic variables:
   palpha <- c(pj = pj, pa = pa, alpha = alpha)
-
+  
   # return vector:
   return(palpha)
 }
 
+# --------------------- #
+# LIFE TABLE FUNCTIONS: 
+# --------------------- #
 # Calculate life table:
 CalcLifeTable <- function(ageLast, ageFirst = NULL, departType) {
   # Number of records:
@@ -1796,3 +1971,69 @@ plot.lifeTableCIs <- function(x, demorate = "lx", ...) {
   par(op)
   
 }
+
+# --------------------------------------- #
+# SAMPLING AND OTHER ANCILLARY FUNCTIONS:
+# --------------------------------------- #
+# Sampling random ages at death:
+SampleRandAge <- function(n, theta, dx = 0.001, model = "GO", shape = "simple",
+                          minSx = 0.0001) {
+  
+  # Extract demographic functions:
+  demo <- CalcDemo(theta, dx = dx, model = model, shape = shape, minSx = minSx,
+                   summarStats = FALSE)
+  
+  # Extract CDF of ages at death:
+  Fx <- 1 - demo$surv
+  
+  # Draw random uniform values:
+  u <- runif(n)
+  
+  # Extract ages for Fx = u:
+  uages <- demo$age[findInterval(u, Fx, rightmost.closed = TRUE)]
+  
+  # return random ages:
+  return(uages)
+}
+
+# survival and average adult survival:
+FindSilerPars <- function(theta, palpha) {
+  theta[c(2, 3, 5)] <- abs(theta[c(2, 3, 5)])
+  
+  # Extract mortality, survival, etc:
+  demotest <- CalcDemo(theta = theta, shape = "bathtub", minSx = 0.00001)
+  
+  # Vector of demographic variables:
+  paltest <- c(CalcAveDemo(demotest), omega = max(demotest$age))
+  
+  # max alpha:
+  alphaMax <- max(paltest[3], palpha[3])
+  
+  # Scale alpha's:
+  paltest[3] <- paltest[3] / alphaMax
+  palpha[3] <- palpha[3] / alphaMax
+  
+  # max maxAge:
+  omegaMax <- max(paltest[4], palpha[4])
+  
+  # Scale max age:
+  paltest[4] <- paltest[4] / omegaMax
+  palpha[4] <- palpha[4] / omegaMax
+  
+  # Difference between
+  diffpa <- palpha - paltest
+  
+  return(sum(diffpa^2))
+}
+
+# Recursive optimization function:
+myoptim <- function(par, fn, ...) {
+  opt1 <- optim(par = par, fn = fn, ...)
+  ntry <- 0
+  while(opt1$convergence != 0 & ntry < 50) {
+    ntry <- ntry + 1
+    opt1 <- optim(par = opt1$par, fn = fn, ...)
+  }
+  return(opt1)
+}
+
