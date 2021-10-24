@@ -100,7 +100,7 @@ CalcDemo <- function(theta = NULL, beta = NULL, x = NULL, dx = NULL,
       ageingRates <- cbind(CalcAgeingRate(theta = theta, x = agesAR, 
                                           model = model, shape = shape), 
                            Surv = round(SxValsAR, 4))
-
+      
       # Pace-shape:
       paceShape <- .CalcPaceShape(theta, xInt, dxInt, survFunc = .CalcSurv)
       
@@ -118,8 +118,8 @@ CalcDemo <- function(theta = NULL, beta = NULL, x = NULL, dx = NULL,
                      summStats = list(calculated = calc, 
                                       ageingRates = ageingRates,
                                       paceShape = paceShape), 
-                    settings = list(theta = theta, model = model,
-                    shape = shape), analyzed = TRUE)
+                     settings = list(theta = theta, model = model,
+                                     shape = shape), analyzed = TRUE)
   } else {
     survList <- list(analyzed = FALSE)
   } 
@@ -184,96 +184,11 @@ CalcDemo <- function(theta = NULL, beta = NULL, x = NULL, dx = NULL,
   # III) CREATE OUTPUT OBJECT: 
   # ========================== #
   outList <- list(surv = survList, fert = fertList)
-  class(outList) <- ifelse(SURV & FERT, "demoBoth", 
-                           ifelse(SURV, "demoSurv", "demoFert"))
+  class(outList) <- c("paramDemo", ifelse(SURV & FERT, "demoBoth", 
+                           ifelse(SURV, "demoSurv", "demoFert")))
   return(outList)
 }
 
-dem1 <- CalcDemo(theta = c(-3, 0.1), beta = c(0.5, 0.02, 3))
 
-plot.demBoth <- function(x, demofun = "all") {
-  # Labels for demographic rates:
-  demoFun <- c("mort", "surv", "dens", "fert")
-  
-  # Check if demorate is properly provided:
-  if (!demofun %in% c(demoFun, "all")) {
-    stop("Argument 'demofun' incorrect, values should be\n'mort', 'surv', 'dens', 'fert', or 'all'.", call. = FALSE)
-  }
-  
-  # Plot names for demographic rates:
-  demoFunNames <- c(mort = expression(paste("Mortality, ", mu, "(", 
-                                         italic(x), ")")),
-                     surv = expression(paste("Survival, ", italic(S), "(", 
-                                           italic(x), ")")), 
-                     dens = expression(paste("Density, ", italic(f), "(", 
-                                           italic(x), ")")),
-                     fert = expression(paste("Fertility, ", italic(m), "(", 
-                                             italic(x), ")")))
-  # mar values:
-  if ("mar" %in% names(args)) {
-    mar <- args$mar
-  } else {
-    mar <- c(2, 4, 1, 1)
-  }
-  
-  # Axis labels:
-  if ("xlab" %in% names(args)) {
-    xlab <- args$xlab
-  } else {
-    xlab <- expression(paste("Age, ", italic(x)))
-  }
-  if ("ylab" %in% names(args)) {
-    ylab <- args$ylab
-    if (demoFun == "all" & length(ylab) != 4) {
-      stop("Length of ylab needs to be four for demofun = 'all'.\nNote variables plotted will be 'lx', 'qx', 'px', and 'ex'.", 
-           call. = FALSE)
-    }
-  } else {
-    if (demoFun == "all") {
-      ylab <- demoFunNames
-    } else {
-      ylab <- demoFunNames[demoFun]
-    }
-  }
-  
-  # Type of line:
-  if ("type" %in% names(args)) {
-    type <- args$type
-  } else {
-    type <- "l"
-  }
-  
-  # Color
-  if ("col" %in% names(args)) {
-    col <- args$col
-  } else {
-    col <- "#800026"
-  }
-  
-  # Line width:
-  if ("lwd" %in% names(args)) {
-    lwd <- args$lwd
-  } else {
-    lwd <- 1
-  }
-  
-  # Cex.lab:
-  if ("cex.lab" %in% names(args)) {
-    cex.lab <- args$cex.lab
-  } else {
-    cex.lab <- 1
-  }
-  
-  # Cex.axis:
-  if ("cex.axis" %in% names(args)) {
-    cex.axis <- args$cex.axis
-  } else {
-    cex.axis <- 1
-  }
-  op <- par(no.readonly = TRUE)
-  
-  if (demorate == "all") {
-    # Create layout matrix:
-    laymat <- cbind(c())
-  }
-}
+dem1 <- CalcDemo(theta = c(-3, 0.1), beta = c(0.5, 0.02, 3), ageMatur = 2)
+dem2 <- CalcDemo(beta = c(0.5, 0.02, 3), ageMatur = 2, type = 'fertility', maxAge = 100)
