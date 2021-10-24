@@ -40,6 +40,9 @@
 
 # Survival:
 .SetTheta  <- function(theta, model = "GO", shape = "simple") {
+  if (is.null(theta)) {
+    stop("Missing 'theta' parameter vector or matrix.\n", call. = FALSE)
+  } 
   if (model == "EX") {
     nTh <- 1
     nameTh <- "b0"
@@ -111,6 +114,9 @@
 
 # Fertility:
 .SetBeta <- function(beta, modelFert = "M1") {
+  if (is.null(beta)) {
+    stop("Missing 'beta' parameter vector or matrix.\n", call. = FALSE)
+  } 
   if (modelFert == "M1") {
     nBe <- 3
     lowBe <- c(0, 0, 0)
@@ -1039,7 +1045,7 @@ CalcAgeingRate <- function(theta, x, model = "GO", shape = "simple",
 }
 
 # Age-specific survival probability:
-CalcProbs <- function(demo, dx = 1) {
+CalcSurvProbs <- function(demo, dx = 1) {
   if (class(demo) != "demoSurv") {
     stop("Object 'demo' should be of class 'demoSurv'.\nCreate object demo with function CalcDemo().", call. = FALSE)
   }
