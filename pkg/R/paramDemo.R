@@ -1981,16 +1981,16 @@ SampleRandAge <- function(n, theta, dx = 0.001, model = "GO", shape = "simple",
   
   # Extract demographic functions:
   demo <- CalcDemo(theta, dx = dx, model = model, shape = shape, minSx = minSx,
-                   summarStats = FALSE)
+                   summarStats = FALSE, type = "survival", summarStats = FALSE)
   
   # Extract CDF of ages at death:
-  Fx <- 1 - demo$surv
+  Fx <- 1 - demo$surv$functs$surv
   
   # Draw random uniform values:
   u <- runif(n)
   
   # Extract ages for Fx = u:
-  uages <- demo$age[findInterval(u, Fx, rightmost.closed = TRUE)]
+  uages <- demo$surv$functs$age[findInterval(u, Fx, rightmost.closed = TRUE)]
   
   # return random ages:
   return(uages)
@@ -2001,7 +2001,8 @@ FindSilerPars <- function(theta, palpha) {
   theta[c(2, 3, 5)] <- abs(theta[c(2, 3, 5)])
   
   # Extract mortality, survival, etc:
-  demotest <- CalcDemo(theta = theta, shape = "bathtub", minSx = 0.00001)
+  demotest <- CalcDemo(theta = theta, shape = "bathtub", minSx = 0.00001, 
+                       type = "survival", summarStats = FALSE)
   
   # Vector of demographic variables:
   paltest <- c(CalcAveDemo(demotest), omega = max(demotest$age))
