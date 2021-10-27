@@ -191,4 +191,7 @@ CalcDemo <- function(theta = NULL, beta = NULL, x = NULL, dx = NULL,
 
 
 dem1 <- CalcDemo(theta = c(-3, 0.1), beta = c(0.5, 0.02, 3), ageMatur = 2)
-dem2 <- CalcDemo(beta = c(0.5, 0.02, 3), ageMatur = 2, type = 'fertility', maxAge = 100)
+dem2 <- CalcDemo(beta = c(0.5, 0.02, 3), ageMatur = 2, type = 'fertility', 
+                 maxAge = 100)
+dem3 <- CalcDemo(theta = c(-3, 0.1), beta = c(0.5, 0.02, 3), ageMatur = 2, summarStats = FALSE)
+plot(dem3)
