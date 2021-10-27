@@ -1,0 +1,7 @@
+#Exports:
+export("CalcAgeingRate", "CalcAgeMaxFert", "CalcAveDemo", "CalcDemo", "Calcfert", "CalcLifeTable", "CalcLifeTableCIs", "CalcMort", "CalcRemainLifeExp", "CalcSurv", "CalcSurvProbs", "FindSilerPars", "myoptim", "plot.lifetable", "plot.lifeTableCIs", "plot.paramDemo", "SampleRandAge")
+
+#S3 methods:
+S3method("plot.lifetable")
+S3method("plot.lifeTableCIs")
+S3method("plot.paramDemo")
