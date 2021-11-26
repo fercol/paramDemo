@@ -7,8 +7,10 @@
 #              mortality and Fertility models, summary statistics (e.g.
 #              ageing rates, life expectancy, lifespan equality, etc.)
 #              and life table calculation from census data.
-# COMMENTS: Created a function to calculate CIs of life table elements and
+# COMMENTS: a) Created a function to calculate CIs of life table elements and
 #           plotting functions for life tables and life table CIs.
+#           b) Created a function to calculate Kaplan-Meier estimators and 
+#              a function to calculate their CIs using bootstrap.
 # ============================ START CODE ==================================== #
 # ============================= #
 # ==== INTERNAL FUNCTIONS: ====
