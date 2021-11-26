@@ -1,12 +1,13 @@
 Package: paramDemo
 Type: Package
-Title: 
-Version: 
-Date: 2021-03-24
-Author: 
-Maintainer: 
-Depends: 
+Title: Parametric and non-parametric demographic functions and applications.
+Version: 1.0.0
+Date: 2021-10-27
+Author: Fernando Colchero
+Maintainer: Fernando Colchero <colchero@imada.sdu.dk>
+Depends: R (>= 2.10)
 Imports: 
 Description: 
 License: GPL
+LazyLoad: yes
 LazyData: yes
