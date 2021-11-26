@@ -47,25 +47,78 @@ if (scen == "GS") {
   shape <- "bathtub"
 }
 
+# Calculate survival from selected model:
+x <- seq(0, 100, 0.01)
+Sx <- CalcSurv(theta = theta, x = x, model = model, shape = shape)
+
 # number of individuals:
-n <- 10000
+n <- 1000
+
+# Study window:
+timeStart <- 1970
+studySpan <- 30
+timeEnd <- timeStart + studySpan
 
 # Simulate lifespans:
-ageLast <- SampleRandAge(n, theta = theta, dx = 1 / 365.25,
+ageDeath <- SampleRandAge(n * 2, theta = theta, dx = 1 / 365.25,
                          model = model, shape = shape)
-ageFirst <- rep(0, n)
-departType <- rep("D", n)
 
+# Simulate times of birth:
+birthDate <- runif(n = n * 2, min = -studySpan, 
+                   max = studySpan)
+
+# Times of death:
+deathDate <- birthDate + ageDeath
+
+# Find individuals that were alive after study started:
+idincl <- which(deathDate >= 0 & birthDate < studySpan)
+n <- length(idincl)
+
+# Subset dataset to detected individuals:
+ageDeath <- ageDeath[idincl]
+birthDate <- birthDate[idincl]
+deathDate <- deathDate[idincl]
+
+# Assign age first:
+ageFirst <- rep(0, n)
+ageFirst[birthDate < 0] <- abs(birthDate[birthDate < 0])
+
+# Find censored individuals:
+idcens <- which(deathDate > studySpan)
+
+# Assign age last:
+ageLast <- ageDeath
+ageLast[idcens] <- (studySpan - birthDate[idcens])
+
+# Assign depart type:
+departType <- rep("D", n)
+departType[idcens] <- "C"
+
+# Calculate life table:
 lt <- CalcLifeTable(ageLast = ageLast, ageFirst = ageFirst, 
                     departType = departType)
 
+# Calculate life table CIs:
 ltCIs <- CalcLifeTableCIs(ageLast = ageLast, ageFirst = ageFirst, 
                     departType = departType)
 
-
+# Plot life table CIs:
 plot(ltCIs, cex.lab = 1.25, cex.axis = 1.25, mar = c(2, 5, 1, 1),
      cex.legend = 1.5, demorate = "all", lwd = 2)
 
+# Calculate Kaplan-Meier curve:
+KM <- CalcKaplanMeier(ageLast = ageLast, ageFirst = ageFirst, 
+                      departType = departType)
+
+# Plot K-M and lx curves:
+plot(lt[, c("Ages", "lx")], type = 'p', col = 'red', lwd = 4, ylim = c(0, 1),
+     pch = 19)
+polygon(c(ltCIs$lx[, "Ages"], rev(ltCIs$lx[, "Ages"])), 
+        c(ltCIs$lx[, 'Lower'], rev(ltCIs$lx[, "Upper"])), 
+        col = adjustcolor(col = 'red', alpha.f = 0.25), border = NA)
+
+lines(KM$Age, KM$KM, col = 'orange', type = 's', lwd = 2)
+lines(x, Sx, col = 'dark red', lwd = 2)
 
 # plot(lt, demorate = "lx", cex.axis = 1.25, cex.lab = 1.25, lwd = 2)
 # 
@@ -92,6 +145,7 @@ ylt <- ltCIs$lx[, c("Lower", "Upper")]
 polygon(c(xlt, rev(xlt)), c(ylt[, 1], rev(ylt[, 2])), 
         col = adjustcolor('red', alpha.f = 0.25), border = NA)
 lines(lt[, c("Ages", 'lx')], type = 's', col = 'red')
+lines(kmTab$Age, kmTab$KM, col = 3, type = 's')
 
 # Remaining life expectancy:
 plot(lt[, c("Ages", "ex")], type = 'l')
