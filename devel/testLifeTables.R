@@ -1,6 +1,6 @@
 source("~/FERNANDO/PROJECTS/4.PACKAGES/paramDemo/pkg/R/paramDemo.R")
 
-scen <- "WB"
+scen <- "GB"
 if (scen == "GS") {
   # Gompertz:
   theta <- c(b0 = -5, b1 = 0.1)
@@ -13,7 +13,7 @@ if (scen == "GS") {
   shape <- "Makeham"
 } else if (scen == "GB") {
   # Siler:
-  theta <- c(a0 = -2, a1 = 1, c = 0.001, b0 = -10, 
+  theta <- c(a0 = 0, a1 = 1, c = 0.001, b0 = -5, 
              b1 = 0.1)
   model <- "GO"
   shape <- "bathtub"
@@ -52,11 +52,11 @@ x <- seq(0, 100, 0.01)
 Sx <- CalcSurv(theta = theta, x = x, model = model, shape = shape)
 
 # number of individuals:
-n <- 1000
+n <- 50
 
 # Study window:
 timeStart <- 1970
-studySpan <- 30
+studySpan <- 20
 timeEnd <- timeStart + studySpan
 
 # Simulate lifespans:
@@ -110,6 +110,10 @@ plot(ltCIs, cex.lab = 1.25, cex.axis = 1.25, mar = c(2, 5, 1, 1),
 KM <- CalcKaplanMeier(ageLast = ageLast, ageFirst = ageFirst, 
                       departType = departType)
 
+# Kaplan-Meier CIs:
+KMcis <- CalcKaplanMeierCIs(ageLast = ageLast, ageFirst = ageFirst, 
+                            departType = departType)
+
 # Plot K-M and lx curves:
 plot(lt[, c("Ages", "lx")], type = 'p', col = 'red', lwd = 4, ylim = c(0, 1),
      pch = 19)
@@ -117,7 +121,11 @@ polygon(c(ltCIs$lx[, "Ages"], rev(ltCIs$lx[, "Ages"])),
         c(ltCIs$lx[, 'Lower'], rev(ltCIs$lx[, "Upper"])), 
         col = adjustcolor(col = 'red', alpha.f = 0.25), border = NA)
 
-lines(KM$Age, KM$KM, col = 'orange', type = 's', lwd = 2)
+lines(KM$Ages, KM$KM, col = 'orange', type = 's', lwd = 2)
+polygon(c(KMcis$KM$Ages, rev(KMcis$KM$Ages)), 
+        c(KMcis$KM$Lower, rev(KMcis$KM$Upper)), 
+        col = adjustcolor(col = 'orange', alpha.f = 0.25), border = NA)
+
 lines(x, Sx, col = 'dark red', lwd = 2)
 
 # plot(lt, demorate = "lx", cex.axis = 1.25, cex.lab = 1.25, lwd = 2)
