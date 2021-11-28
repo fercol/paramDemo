@@ -1415,50 +1415,51 @@ CalcAveDemo <- function(demo) {
 # LIFE TABLE FUNCTIONS: 
 # --------------------- #
 # Calculate life table:
-CalcLifeTable <- function(ageLast, ageFirst = NULL, departType) {
+CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
   # Number of records:
   n <- length(ageLast)
-
+  
   # Set age first to 0 if NULL:
   if (is.null(ageFirst)) {
     ageFirst <- rep(0, n)
   }
-
+  
   # Unit age vector for that sex:
-  agev <- 0:ceiling(max(ageLast))
+  agev <- seq(from = 0, to = ceiling(max(ageLast)), by = dx)
+  # agev <- 0:ceiling(max(ageLast))
   nage <- length(agev)
-
+  
   # Outputs:
   Nx <- Dx <- ax <- rep(0, nage)
   for (xx in 1:nage) {
     # A) EXPOSURES:
     # Find how many entered the interval (including truncated):
-    idNx <- which(ageFirst < agev[xx] + 1 & ageLast >= agev[xx])
-
+    idNx <- which(ageFirst < agev[xx] + dx & ageLast >= agev[xx])
+    
     # Extract ages and departType:
     xf <- ageFirst[idNx]
     xl <- ageLast[idNx]
     dt <- departType[idNx]
-
+    
     # proportion of truncation in interval:
     trp <- xf - agev[xx]
     trp[trp < 0] <- 0
-
+    
     # proportion of censoring:
     cep <- agev[xx] + 1 - xl
     cep[cep < 0] <- 0
     cep[dt == "D"] <- 0
-
+    
     # Calculate exposures:
     nexp <- 1 - trp - cep
     Nx[xx] <- sum(nexp)
-
+    
     # B) DEATHS:
     # Calculate total deaths in the interval:
-    idDx <- which(dt == "D" & xl < agev[xx] + 1)
+    idDx <- which(dt == "D" & xl < agev[xx] + dx)
     # Dx[xx] <- length(idDx)
     Dx[xx] <- sum(nexp[idDx])
-
+    
     # C) PROPORTION LIVED BY THOSE THAT DIED IN INTERVAL:
     if (Dx[xx] > 1) {
       ylived <- xl[idDx] - agev[xx]
@@ -1467,33 +1468,33 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType) {
       ax[xx] <- 0
     }
   }
-
+  
   # Age-specific mortality probability:
   qx <- Dx / Nx
-
+  
   # Age-specific survival probability:
   px <- 1 - qx
-
+  
   # Survivorship (or cumulative survival):
   lx <- c(1, cumprod(px))[1:nage]
   # lx <- Nx / n
-
+  
   # Number of individual years lived within the interval:
   Lx <- lx * (1 - ax * qx)
   # Note: correction on the calculation of Lx (doesn't work when
   #       there are censored and truncated records)
   # Lx <- Nx - Dx * ax
   Lx[is.na(Lx)] <- 0
-
+  
   # Total number of individual years lived after age x:
-  Tx <- rev(cumsum(rev(Lx)))
-
+  Tx <- rev(cumsum(rev(Lx))) * dx
+  
   # Remaining life expectancy after age x:
-  ex <- Tx / lx
+  ex <- Tx / lx 
   ex[which(is.na(ex))] <- 0
   # (Note: follows on the correction for Lx)
   # ex <- Tx / Nx
-
+  
   # Life-table:
   lt <- cbind(Ages = agev, Nx = Nx, Dx = Dx, lx = lx, px = px,
               qx = qx, Lx = Lx, Tx = Tx, ex = ex)
@@ -1503,7 +1504,7 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType) {
 
 # Calculation of life table CIs:
 CalcLifeTableCIs <- function(ageLast, ageFirst = NULL, departType, 
-                             nboot = 2000, alpha = 0.05) {
+                             nboot = 2000, alpha = 0.05, dx = 1) {
   # Set age first to 0 if NULL:
   if (is.null(ageFirst)) {
     ageFirst <- rep(0, n)
@@ -1531,7 +1532,7 @@ CalcLifeTableCIs <- function(ageLast, ageFirst = NULL, departType,
     ageFirstBoot <- ageFirst[idboot]
     departTypeBoot <- departType[idboot]
     ltb <- CalcLifeTable(ageLast = ageLastBoot, ageFirst = ageFirstBoot, 
-                         departType = departTypeBoot)
+                         departType = departTypeBoot, dx = dx)
     nl <- nrow(ltb)
     for (dr in demRates) {
       bootarr[1:nl, iboot, dr] <- ltb[, dr]
@@ -1980,7 +1981,12 @@ plot.paramDemoLTCIs <- function(x, demorate = "lx", ...) {
 # Simple Kaplan-Meier curve:
 CalcKaplanMeier <- function(ageLast, ageFirst = NULL, departType) {
   # All ages:
-  allAges <- sort(unique(c(ageLast, ageFirst[which(ageFirst > 0)])))
+  if (is.null(ageFirst)) {
+    allAges <- sort(unique(ageLast))
+  } else {
+    idAgeFirst <- which(ageFirst > min(ageLast))
+    allAges <- sort(unique(c(ageLast, ageFirst[idAgeFirst])))
+  }
   nAllAges <- length(allAges)
   ageCounts <- rep(0, nAllAges)
   names(ageCounts) <- allAges
@@ -1996,8 +2002,7 @@ CalcKaplanMeier <- function(ageLast, ageFirst = NULL, departType) {
   if (is.null(ageFirst)) {
     cumTrunc <- ageCounts
   } else {
-    idTrunc <- which(ageFirst > 0)
-    temptab <- table(ageFirst[idTrunc])
+    temptab <- table(ageFirst[idAgeFirst])
     tabAgeTrunc <- ageCounts
     tabAgeTrunc[names(temptab)] <- temptab
     cumTrunc <- rev(cumsum(rev(tabAgeTrunc)))
@@ -2015,8 +2020,15 @@ CalcKaplanMeier <- function(ageLast, ageFirst = NULL, departType) {
   Nx <- c(cumLast - cumTrunc)[idDx]
   Dx <- tabAgeDeath[idDx]
   km <- cumprod(1 - Dx / Nx)
-  
-  kmTab <- data.frame(Age = allAges[idDx], KM = km, Nx = Nx, Dx = Dx)
+  if (allAges[1] > 0) {
+    Nx <- c(1, Nx)
+    Dx <- c(0, Dx)
+    km <- c(1, km)
+    ages <- c(0, allAges[idDx])
+  } else {
+    ages <- allAges[idDx]
+  }
+  kmTab <- data.frame(Ages = ages, KM = km, Nx = Nx, Dx = Dx)
   class(kmTab) <- c("paramDemoKM")
   return(kmTab)
 }
@@ -2028,7 +2040,12 @@ CalcKaplanMeierCIs <- function(ageLast, ageFirst = NULL, departType,
   n <- length(ageLast)
   
   # All ages:
-  allAges <- sort(unique(c(ageLast, ageFirst[which(ageFirst > 0)])))
+  if (is.null(ageFirst)) {
+    allAges <- sort(unique(ageLast))
+  } else {
+    idAgeFirst <- which(ageFirst > min(ageLast))
+    allAges <- sort(unique(c(ageLast, ageFirst[idAgeFirst])))
+  }
   nAllAges <- length(allAges)
   ageCounts <- rep(0, nAllAges)
   names(ageCounts) <- allAges
@@ -2036,13 +2053,13 @@ CalcKaplanMeierCIs <- function(ageLast, ageFirst = NULL, departType,
   # Output matrix:
   kmboot <- matrix(0, nAllAges, nboot) 
   
+  # Bootstrap:
   for (iboot in 0:nboot) {
     if (iboot == 0) {
       idboot <- 1:n
     } else {
       idboot <- sample(x = 1:n, size = n, replace = TRUE)
     }
-    
     ageLastBoot <- ageLast[idboot]
     departTypeBoot <- departType[idboot]
     
@@ -2058,7 +2075,7 @@ CalcKaplanMeierCIs <- function(ageLast, ageFirst = NULL, departType,
       cumTrunc <- ageCounts
     } else {
       ageFirstBoot <- ageFirst[idboot]
-      idTrunc <- which(ageFirstBoot > 0)
+      idTrunc <- which(ageFirstBoot > min(ageLastBoot))
       temptab <- table(ageFirstBoot[idTrunc])
       tabAgeTrunc <- ageCounts
       tabAgeTrunc[names(temptab)] <- temptab
@@ -2090,7 +2107,7 @@ CalcKaplanMeierCIs <- function(ageLast, ageFirst = NULL, departType,
   colnames(kmcii) <- c("Lower", "Upper")
   
   # construct final data frame:
-  kmcidf <- data.frame(Age = allAges, KM = kmnb, kmcii)
+  kmcidf <- data.frame(Ages = allAges, KM = kmnb, kmcii)
   kmcilist <- list(KM = kmcidf, settings = c(alpha = alpha, nboot = nboot))
   class(kmcilist) <- c("paramDemoKMCIs")
   return(kmcilist)
@@ -2102,7 +2119,7 @@ plot.paramDemoKM <- function(x, ...) {
   args <- list(...)
   
   # Vector of ages:
-  agev <- x$Age
+  agev <- x$Ages
   nage <- length(agev)
   
   # mar values:
@@ -2199,7 +2216,7 @@ plot.paramDemoKMCIs <- function(x, ...) {
   # KM:
   KM <- x$KM
   # Vector of ages:
-  agev <- KM$Age
+  agev <- KM$Ages
   nage <- length(agev)
   
   # mar values:
