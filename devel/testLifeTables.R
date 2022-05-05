@@ -47,24 +47,35 @@ if (scen == "GS") {
   shape <- "bathtub"
 }
 
+# theta <- c(-2, 3, 0.25, -8, 0.36)
 # Calculate survival from selected model:
 x <- seq(0, 100, 0.01)
 Sx <- CalcSurv(theta = theta, x = x, model = model, shape = shape)
 
 # number of individuals:
-n <- 50
+n <- 1000
 
 # Study window:
 timeStart <- 1970
-studySpan <- 20
+studySpan <- 10 # 20
 timeEnd <- timeStart + studySpan
 
 # Simulate lifespans:
 ageDeath <- SampleRandAge(n * 2, theta = theta, dx = 1 / 365.25,
-                         model = model, shape = shape)
+                          model = model, shape = shape)
+
+# ID of truncation:
+# indTrunc <- rbinom(n = n, size = 1, 0.25)
+# nTrunc <- sum(indTrunc)
+# idTrunc <- which(indTrunc == 1)
+
+# Age at truncation:
+# ageFirst <- rep(0, n)
+# ageFirst <- runif(n = nTrunc, min = rep(0, nTrunc),
+#                   max = ageLast[idTrunc] / 2)
 
 # Simulate times of birth:
-birthDate <- runif(n = n * 2, min = -studySpan, 
+birthDate <- runif(n = n * 2, min = -studySpan,
                    max = studySpan)
 
 # Times of death:
@@ -99,32 +110,37 @@ lt <- CalcLifeTable(ageLast = ageLast, ageFirst = ageFirst,
                     departType = departType)
 
 # Calculate life table CIs:
-ltCIs <- CalcLifeTableCIs(ageLast = ageLast, ageFirst = ageFirst, 
-                    departType = departType)
+# ltCIs <- CalcLifeTableCIs(ageLast = ageLast, ageFirst = ageFirst, 
+#                     departType = departType)
 
 # Plot life table CIs:
-plot(ltCIs, cex.lab = 1.25, cex.axis = 1.25, mar = c(2, 5, 1, 1),
-     cex.legend = 1.5, demorate = "all", lwd = 2)
+# plot(ltCIs, cex.lab = 1.25, cex.axis = 1.25, mar = c(2, 5, 1, 1),
+#      cex.legend = 1.5, demorate = "all", lwd = 2)
 
 # Calculate Kaplan-Meier curve:
-KM <- CalcKaplanMeier(ageLast = ageLast, ageFirst = ageFirst, 
+KM <- CalcKaplanMeier(ageLast = ageLast, 
                       departType = departType)
 
 # Kaplan-Meier CIs:
-KMcis <- CalcKaplanMeierCIs(ageLast = ageLast, ageFirst = ageFirst, 
-                            departType = departType)
+# KMcis <- CalcKaplanMeierCIs(ageLast = ageLast,
+#                             departType = departType)
+
+ple <- CalcProductLimitEst(ageLast = ageLast, ageFirst = ageFirst, 
+                         departType = departType)
+pleCIs <- CalcProductLimitEstCIs(ageLast = ageLast, ageFirst = ageFirst, 
+                               departType = departType)
 
 # Plot K-M and lx curves:
 plot(lt[, c("Ages", "lx")], type = 'p', col = 'red', lwd = 4, ylim = c(0, 1),
      pch = 19)
-polygon(c(ltCIs$lx[, "Ages"], rev(ltCIs$lx[, "Ages"])), 
-        c(ltCIs$lx[, 'Lower'], rev(ltCIs$lx[, "Upper"])), 
-        col = adjustcolor(col = 'red', alpha.f = 0.25), border = NA)
-
+# polygon(c(ltCIs$lx[, "Ages"], rev(ltCIs$lx[, "Ages"])), 
+#         c(ltCIs$lx[, 'Lower'], rev(ltCIs$lx[, "Upper"])), 
+#         col = adjustcolor(col = 'red', alpha.f = 0.25), border = NA)
+# 
 lines(KM$Ages, KM$KM, col = 'orange', type = 's', lwd = 2)
-polygon(c(KMcis$KM$Ages, rev(KMcis$KM$Ages)), 
-        c(KMcis$KM$Lower, rev(KMcis$KM$Upper)), 
-        col = adjustcolor(col = 'orange', alpha.f = 0.25), border = NA)
+# polygon(c(KMcis$KM$Ages, rev(KMcis$KM$Ages)), 
+#         c(KMcis$KM$Lower, rev(KMcis$KM$Upper)), 
+#         col = adjustcolor(col = 'orange', alpha.f = 0.25), border = NA)
 
 lines(x, Sx, col = 'dark red', lwd = 2)
 

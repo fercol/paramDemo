@@ -1,5 +1,5 @@
-\name{FindSilerPars}
-\alias{FindSilerPars}
+\name{plot.paramDemoPLECIs}
+\alias{plot.paramDemoPLECIs}
 
 \title{
  FILL UP
@@ -9,12 +9,12 @@
  FILL UP
 }
 
-\usage{FindSilerPars (theta, palpha)}
+\usage{plot.paramDemoPLECIs (x, ...)}
 
 \arguments{
-	\item{ theta }{FILL UP}
+	\item{ x }{FILL UP}
 
-	\item{palpha }{FILL UP}
+	\item{... }{FILL UP}
 
 }
 

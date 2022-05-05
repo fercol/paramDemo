@@ -1,5 +1,5 @@
-\name{CalcLifeTableCIs}
-\alias{CalcLifeTableCIs}
+\name{CalcKaplanMeier}
+\alias{CalcKaplanMeier}
 
 \title{
  FILL UP
@@ -9,20 +9,12 @@
  FILL UP
 }
 
-\usage{CalcLifeTableCIs (ageLast, ageFirst = NULL, departType, nboot = 2000,  alpha = 0.05, dx = 1)}
+\usage{CalcKaplanMeier (ageLast, departType)}
 
 \arguments{
 	\item{ ageLast }{FILL UP}
 
-	\item{ageFirst }{FILL UP}
-
 	\item{departType }{FILL UP}
-
-	\item{nboot }{FILL UP}
-
-	\item{ alpha }{FILL UP}
-
-	\item{dx }{FILL UP}
 
 }
 

@@ -1,5 +1,5 @@
-\name{plot.lifetable}
-\alias{plot.lifetable}
+\name{plot.paramDemoLT}
+\alias{plot.paramDemoLT}
 
 \title{
  FILL UP
@@ -9,7 +9,7 @@
  FILL UP
 }
 
-\usage{plot.lifetable (x, demorate = "lx", ...)}
+\usage{plot.paramDemoLT (x, demorate = "lx", ...)}
 
 \arguments{
 	\item{ x }{FILL UP}

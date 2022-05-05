@@ -2,15 +2,16 @@
 # PACKAGE: paramDemo
 # AUTHOR: Fernando Colchero
 # DATE CREATED: 2020-06-01
-# DATE MODIFIED: 2021-10-14
+# DATE MODIFIED: 2022-02-11
 # DESCRIPTION: Functions to extract demographic information from parametric
 #              mortality and Fertility models, summary statistics (e.g.
-#              ageing rates, life expectancy, lifespan equality, etc.)
-#              and life table calculation from census data.
+#              ageing rates, life expectancy, lifespan equality, etc.), 
+#              life table and product limit estimator calculation from 
+#              census data.
 # COMMENTS: a) Created a function to calculate CIs of life table elements and
 #           plotting functions for life tables and life table CIs.
-#           b) Created a function to calculate Kaplan-Meier estimators and 
-#              a function to calculate their CIs using bootstrap.
+#           b) Created functions to calculate Kaplan-Meier and product limit 
+#           estimators and a function to calculate their CIs using bootstrap.
 # ============================ START CODE ==================================== #
 # ============================= #
 # ==== INTERNAL FUNCTIONS: ====
@@ -70,7 +71,7 @@
     nameTh <- c("c", nameTh)
     lowTh <- c(0, lowTh)
     if (theta[3] < 0 & model == "GO") {
-      lowTh[3] == -Inf
+      lowTh[3] <- -Inf
     }
   } else if (shape == "bathtub") {
     nTh <- nTh + 3
@@ -105,7 +106,9 @@
     THELOW <- all(theta >= lowTh)
   }
   if(!THELOW) {
-    stop(sprintf("Some theta parameters are below their lower bound.\n %s.\n",paste(sprintf("min(%s) = %s", nameTh, lowTh), collapse = ", ")),
+    stop(sprintf("Some theta parameters are below their lower bound.\n %s.\n",
+                 paste(sprintf("min(%s) = %s", nameTh, lowTh), 
+                       collapse = ", ")),
          call. = FALSE)
     
   }
@@ -538,9 +541,7 @@
     } else if (shape == "Makeham") {
       ageingRate <- function(theta, x) {
         exp(theta["b0"] + theta["b1"] * x) *
-          (theta["b1"] * (1 + theta["b2"] * exp(theta["b0"]) / theta["b1"] *
-                            (exp(theta["b1"] * x) - 1)) -
-             theta["b2"] * exp(theta["b0"] + theta["b1"] * x)) /
+          (theta["b1"] - theta["b2"] * exp(theta["b0"])) /
           ((1 + theta["b2"] * exp(theta["b0"]) / theta["b1"] *
               (exp(theta["b1"] * x) - 1))^2 *
              (theta["c"] + exp(theta["b0"] + theta["b1"] * x) /
@@ -688,6 +689,52 @@
   return(ceiling(xTest[idBound - 1]))
 }
 
+# --------------------------------------------- #
+# EXTRACT SILER PARAMETERS FROM SURVIVAL RATES: 
+# --------------------------------------------- #
+.FindSilerPars <- function(theta, palpha) {
+  theta[c(2, 3, 5)] <- abs(theta[c(2, 3, 5)])
+  
+  # Extract mortality, survival, etc:
+  demotest <- CalcDemo(theta = theta, shape = "bathtub", minSx = 0.00001, 
+                       type = "survival", summarStats = FALSE)
+  
+  # Vector of demographic variables:
+  paltest <- c(CalcAveDemo(demotest), omega = max(demotest$age))
+  
+  # max alpha:
+  alphaMax <- max(paltest[3], palpha[3])
+  
+  # Scale alpha's:
+  paltest[3] <- paltest[3] / alphaMax
+  palpha[3] <- palpha[3] / alphaMax
+  
+  # max maxAge:
+  omegaMax <- max(paltest[4], palpha[4])
+  
+  # Scale max age:
+  paltest[4] <- paltest[4] / omegaMax
+  palpha[4] <- palpha[4] / omegaMax
+  
+  # Difference between
+  diffpa <- palpha - paltest
+  
+  return(sum(diffpa^2))
+}
+
+# ---------------- #
+# RECURSIVE OPTIM:
+# ---------------- #
+.myoptim <- function(par, fn, ...) {
+  opt1 <- optim(par = par, fn = fn, ...)
+  ntry <- 0
+  while(opt1$convergence != 0 & ntry < 50) {
+    ntry <- ntry + 1
+    opt1 <- optim(par = opt1$par, fn = fn, ...)
+  }
+  return(opt1)
+}
+
 # ========================= #
 # ==== USER FUNCTIONS: ====
 # ========================= #
@@ -748,7 +795,7 @@ CalcSurv <- function(theta, x, model = "GO", shape = "simple",
 }
 
 # Calculate Fertility:
-Calcfert <- function(beta, x, modelFert = "M1", checkBeta = TRUE) {
+CalcFert <- function(beta, x, modelFert = "M1", checkBeta = TRUE) {
 
   # Verify fertility model:
   .VerifyFertMod(modelFert = modelFert)
@@ -778,7 +825,11 @@ CalcDemo <- function(theta = NULL, beta = NULL, x = NULL, dx = NULL,
                      type = "both", minSx = 0.01, summarStats = TRUE, 
                      ageMatur = 0, maxAge = NULL, agesAR = NULL, 
                      SxValsAR = NULL) {
-  
+  if (!type %in% c("survival", "fertility", "both")) {
+    stop("Wrong 'type' argument, values should be:
+         'survival', 'fertility', or 'both'.",
+         call. = FALSE)
+  }
   # logical for survival:
   if (type %in% c("survival", "both")) {
     SURV <- TRUE
@@ -933,7 +984,7 @@ CalcDemo <- function(theta = NULL, beta = NULL, x = NULL, dx = NULL,
     }
     
     # Calculate age-specific fertility:
-    fert <- .CalcFert(beta, x[which(x >= ageMatur)] - ageMatur)
+    fert <- .CalcFert(beta, x[which(x >= ageMatur)] - ageMatur) * dx
     
     # Summary 
     if (summarStats) {
@@ -1188,8 +1239,8 @@ plot.paramDemo <- function(x, demofun = "all", ...) {
 # --------------------------------------------------- #
 # Function to calculate remaining life expectancy:
 CalcRemainLifeExp <- function(theta, x = NULL, dx = NULL, xmax = NULL,
-                              atAllAges = FALSE, model = "GO", shape = "simple",
-                              checkTheta = TRUE) {
+                              atAllAges = FALSE, model = "GO", 
+                              shape = "simple", checkTheta = TRUE) {
   # ------------------------------------------------
   # A) GENERAL SETUP AND VERIFICATION OF PARAMETERS:
   # ------------------------------------------------
@@ -1364,17 +1415,17 @@ CalcAgeMaxFert <- function(beta, modelFert = "M1", ageMatur = 0,
 # ---------------------------------------- #
 # Age-specific survival probability:
 CalcSurvProbs <- function(demo, dx = 1) {
-  if (class(demo) != "demoSurv") {
+  if (!class(demo)[2] %in%  c("demoSurv", "demoBoth")) {
     stop("Object 'demo' should be of class 'demoSurv'.\nCreate object demo with function CalcDemo().", call. = FALSE)
   }
   if (length(demo$age) == 1) {
     stop("Age-specific probabilities cannot be calculated from a single age.\nIncrease the age vector on CalcDemo().", call. = FALSE)
 
   }
-  x <- demo$age
-  mux <- demo$mort
-  cumh <- demo$cumhaz
-  Sx <- demo$surv
+  x <- demo$surv$functs$age
+  mux <- demo$surv$functs$mort
+  cumh <- demo$surv$functs$cumhaz
+  Sx <- demo$surv$functs$surv
   xdis <- x[which(x %in% 0:max(x))]
   idAges <- which(x %in% xdis)
   nAges <- length(idAges)
@@ -1390,10 +1441,11 @@ CalcSurvProbs <- function(demo, dx = 1) {
 CalcAveDemo <- function(demo) {
   
   # Find life table probabilities
-  probs <- CalcProbs(demo)
+  probs <- CalcSurvProbs(demo)
   
   # Find age at minimum mortality:
-  alpha <- floor(demo$age[which(demo$mort == min(demo$mort))])
+  alpha <- floor(demo$surv$functs$age[which(demo$surv$functs$mort == 
+                                              min(demo$surv$functs$mort))])
   
   # Indices of adult and juvenile ages:
   idjuv <- which(probs[, "age"] < alpha)
@@ -1425,8 +1477,8 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
   }
   
   # Unit age vector for that sex:
-  agev <- seq(from = 0, to = ceiling(max(ageLast)), by = dx)
-  # agev <- 0:ceiling(max(ageLast))
+  agev <- seq(from = 0, to = ceiling(max(ageLast[which(departType == "D")])), 
+              by = dx)
   nage <- length(agev)
   
   # Outputs:
@@ -1446,7 +1498,7 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
     trp[trp < 0] <- 0
     
     # proportion of censoring:
-    cep <- agev[xx] + 1 - xl
+    cep <- agev[xx] + dx - xl
     cep[cep < 0] <- 0
     cep[dt == "D"] <- 0
     
@@ -1471,6 +1523,7 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
   
   # Age-specific mortality probability:
   qx <- Dx / Nx
+  qx[which(is.na(qx))] <- 0
   
   # Age-specific survival probability:
   px <- 1 - qx
@@ -1979,14 +2032,9 @@ plot.paramDemoLTCIs <- function(x, demorate = "lx", ...) {
 # KAPLAN-MEIER FUNCTIONS:
 # ----------------------- #
 # Simple Kaplan-Meier curve:
-CalcKaplanMeier <- function(ageLast, ageFirst = NULL, departType) {
+CalcKaplanMeier <- function(ageLast, departType) {
   # All ages:
-  if (is.null(ageFirst)) {
-    allAges <- sort(unique(ageLast))
-  } else {
-    idAgeFirst <- which(ageFirst > min(ageLast))
-    allAges <- sort(unique(c(ageLast, ageFirst[idAgeFirst])))
-  }
+  allAges <- sort(unique(ageLast))
   nAllAges <- length(allAges)
   ageCounts <- rep(0, nAllAges)
   names(ageCounts) <- allAges
@@ -2017,11 +2065,11 @@ CalcKaplanMeier <- function(ageLast, ageFirst = NULL, departType) {
   cumLast <- cumtemp
   
   # Exposures:
-  Nx <- c(cumLast - cumTrunc)[idDx]
+  Nx <- cumLast[idDx]
   Dx <- tabAgeDeath[idDx]
   km <- cumprod(1 - Dx / Nx)
   if (allAges[1] > 0) {
-    Nx <- c(1, Nx)
+    Nx <- c(Nx[1], Nx)
     Dx <- c(0, Dx)
     km <- c(1, km)
     ages <- c(0, allAges[idDx])
@@ -2034,18 +2082,13 @@ CalcKaplanMeier <- function(ageLast, ageFirst = NULL, departType) {
 }
 
 # Kaplan-Meier CIs:
-CalcKaplanMeierCIs <- function(ageLast, ageFirst = NULL, departType, 
+CalcKaplanMeierCIs <- function(ageLast, departType, 
                                alpha = 0.05, nboot = 1000) {
   # Number of individuals:
   n <- length(ageLast)
   
   # All ages:
-  if (is.null(ageFirst)) {
-    allAges <- sort(unique(ageLast))
-  } else {
-    idAgeFirst <- which(ageFirst > min(ageLast))
-    allAges <- sort(unique(c(ageLast, ageFirst[idAgeFirst])))
-  }
+  allAges <- sort(unique(ageLast))
   nAllAges <- length(allAges)
   ageCounts <- rep(0, nAllAges)
   names(ageCounts) <- allAges
@@ -2070,18 +2113,6 @@ CalcKaplanMeierCIs <- function(ageLast, ageFirst = NULL, departType,
     tabAgeDeath[names(temptab)] <- temptab
     idDx <- which(tabAgeDeath > 0)
     
-    # Ages at trunctation:
-    if (is.null(ageFirst)) {
-      cumTrunc <- ageCounts
-    } else {
-      ageFirstBoot <- ageFirst[idboot]
-      idTrunc <- which(ageFirstBoot > min(ageLastBoot))
-      temptab <- table(ageFirstBoot[idTrunc])
-      tabAgeTrunc <- ageCounts
-      tabAgeTrunc[names(temptab)] <- temptab
-      cumTrunc <- rev(cumsum(rev(tabAgeTrunc)))
-    }
-    
     # All ages at censoring:
     temptab <- c(table(ageLastBoot))
     tabAgeLast <- ageCounts
@@ -2091,7 +2122,7 @@ CalcKaplanMeierCIs <- function(ageLast, ageFirst = NULL, departType,
     cumLast <- cumtemp
     
     # Exposures:
-    Nx <- c(cumLast - cumTrunc)
+    Nx <- cumLast
     Dx <- tabAgeDeath
     km <- cumprod(1 - Dx / Nx)
     if (iboot == 0) {
@@ -2312,6 +2343,377 @@ plot.paramDemoKMCIs <- function(x, ...) {
   par(op)
 }
 
+# ------------------------ #
+# PRODUCT-LIMIT ESTIMATOR: 
+# ------------------------ #
+# Simple Product-limit estimator function:
+CalcProductLimitEst <- function(ageLast, ageFirst = NULL, departType) {
+  n <- length(ageLast)
+  
+  # create identities and age list:
+  if (is.null(ageFirst)) {
+    allAges <- sort(ageLast)
+    allAgesId <- departType
+  } else {
+    idAgeFirst <- which(ageFirst > min(ageLast))
+    allAges <- c(ageFirst[idAgeFirst], ageLast)
+    allAgesId <- c(rep("F", length(idAgeFirst)), departType)
+  }
+  
+  ageTypes <- unique(allAgesId)
+  ntypes <- length(ageTypes)
+  idsort <- sort.int(allAges, index.return = TRUE)$ix
+  allAges <- allAges[idsort]
+  allAgesId <- allAgesId[idsort]
+  nAllAges <- length(allAges)
+  unAllAges <- unique(allAges)
+  nages <- length(unAllAges)
+  ageNames <- as.character(unAllAges)
+  
+  # Count by type:
+  recTab <- matrix(0, nages, ntypes, dimnames = list(ageNames, ageTypes))
+  for (at in ageTypes) {
+    idtemp <- rep(0, nAllAges)
+    idtemp[which(allAgesId == at)] <- 1
+    ttemp <- table(allAges, idtemp)
+    temp <- c(ttemp[, 2])
+    recTab[, at] <- temp
+  }
+  
+  # Cumulative tables:
+  cumTab <- apply(recTab, 2, function(xx) {
+    rev(cumsum(rev(xx)))
+  })
+  
+  Nx <- cumTab[, "D"] + cumTab[, "C"] - cumTab[, "F"]
+  Dx <- recTab[, "D"]
+  
+  idDead <- which(recTab[, "D"] > 0)
+  ple <- cumprod(1 - c(Dx / Nx)[idDead])
+  
+  # Fill up table:
+  pleTab <- data.frame(Ages = unAllAges[idDead], ple = ple)
+  class(pleTab) <- c("paramDemoPLE")
+  return(pleTab)
+}
+
+# Product-limit estimator CIs:
+CalcProductLimitEstCIs <- function(ageFirst, ageLast, departType, nboot = 1000,
+                                 alpha = 0.05) {
+  # =================== #
+  # ==== NON-BOOT: ====
+  # =================== #
+  n <- length(ageLast)
+  
+  # create identities and age list:
+  if (is.null(ageFirst)) {
+    allAges <- sort(ageLast)
+    allAgesId <- departType
+  } else {
+    idAgeFirst <- which(ageFirst > min(ageLast))
+    allAges <- c(ageFirst[idAgeFirst], ageLast)
+    allAgesId <- c(rep("F", length(idAgeFirst)), departType)
+  }
+  
+  ageTypes <- unique(allAgesId)
+  ntypes <- length(ageTypes)
+  idsort <- sort.int(allAges, index.return = TRUE)$ix
+  allAges <- allAges[idsort]
+  allAgesId <- allAgesId[idsort]
+  nAllAges <- length(allAges)
+  unAllAges <- unique(allAges)
+  nages <- length(unAllAges)
+  ageNames <- as.character(unAllAges)
+  
+  # Count by type:
+  recTab <- matrix(0, nages, ntypes, dimnames = list(ageNames, ageTypes))
+  for (at in ageTypes) {
+    idtemp <- rep(0, nAllAges)
+    idtemp[which(allAgesId == at)] <- 1
+    ttemp <- table(allAges, idtemp)
+    temp <- c(ttemp[, 2])
+    recTab[, at] <- temp
+  }
+  
+  # Cumulative tables:
+  cumTab <- apply(recTab, 2, function(xx) {
+    rev(cumsum(rev(xx)))
+  })
+  
+  Nx <- cumTab[, "D"] + cumTab[, "C"] - cumTab[, "F"]
+  Dx <- recTab[, "D"]
+  
+  idDead <- which(recTab[, "D"] > 0)
+  nDead <- length(idDead)
+  pleNB <- cumprod(1 - c(Dx / Nx)[idDead])
+  
+  # ==================== #
+  # ==== BOOTSTRAP: ====
+  # ==================== #
+  bootTab <- matrix(0, nDead, nboot)
+  for (iboot in 1:nboot) {
+    idboot <- sample(1:n, size = n, replace = TRUE)
+    ageLastb <- ageLast[idboot]
+    ageFirstb <- ageFirst[idboot]
+    departTypeb <- departType[idboot]
+    
+    # create identities and age list:
+    if (is.null(ageFirst)) {
+      allAgesb <- sort(ageLastb)
+      allAgesIdb <- departTypeb
+    } else {
+      idAgeFirstb <- which(ageFirstb > min(ageLastb))
+      allAgesb <- c(ageFirstb[idAgeFirstb], ageLastb)
+      allAgesIdb <- c(rep("F", length(idAgeFirstb)), departTypeb)
+    }
+    
+    unAllAgesb <- sort(unique(allAgesb))
+    nagesb <- length(unAllAgesb)
+    idmiss <- which(!unAllAges %in% unAllAgesb)
+    allAgesb <- c(allAgesb, unAllAges[idmiss])
+    allAgesIdb <- c(allAgesIdb, rep("N", length(idmiss)))
+    
+    ageTypesb <- unique(allAgesIdb)
+    ntypesb <- length(ageTypesb)
+    idsort <- sort.int(allAgesb, index.return = TRUE)$ix
+    allAgesb <- allAgesb[idsort]
+    allAgesIdb <- allAgesIdb[idsort]
+    nAllAgesb <- length(allAgesb)
+    
+    # ageNames <- sprintf("a%s", gsub("[[:space:]]", "0", 
+    #                                 format(1:nages, scientific = F)))
+    
+    # Count by type:
+    recTab <- matrix(0, nages, ntypesb, dimnames = list(ageNames, ageTypesb))
+    for (at in ageTypes) {
+      idtemp <- rep(0, nAllAgesb)
+      idtemp[which(allAgesIdb == at)] <- 1
+      ttemp <- table(allAgesb, idtemp)
+      temp <- c(ttemp[, 2])
+      recTab[, at] <- temp
+    }
+    
+    # Cumulative tables:
+    cumTab <- apply(recTab, 2, function(xx) {
+      rev(cumsum(rev(xx)))
+    })
+    
+    Nx <- cumTab[, "D"] + cumTab[, "C"] - cumTab[, "F"]
+    Dx <- recTab[, "D"]
+    
+    indDeadb <- rep(0, nages)
+    indDeadb[which(recTab[, "D"] > 0)] <- 1
+    pleb <- cumprod(((1 - c(Dx / Nx))^indDeadb)[idDead])
+    bootTab[, iboot] <- pleb
+  }
+  
+  # Calculate CIs:  # Calculate CIs:
+  pleci <- t(apply(bootTab, 1, quantile, c(alpha / 2, 1 - alpha / 2),
+                   na.rm = TRUE))
+  colnames(pleci) <- c("Lower", "Upper")
+  
+  pleboot <- data.frame(Ages = unAllAges[idDead], ple = pleNB, pleci)
+  class(pleboot) <- "paramDemoPLECIs"
+  return(pleboot)
+}
+
+# Plot Product-limit estimator:
+plot.paramDemoPLE <- function(x, ...) {
+  # Additional arguments:
+  args <- list(...)
+  
+  # Vector of ages:
+  agev <- x$Ages
+  nage <- length(agev)
+  
+  # mar values:
+  if ("mar" %in% names(args)) {
+    mar <- args$mar
+  } else {
+    mar <- c(2, 4, 1, 1)
+  }
+  
+  # Colors:
+  if ("col" %in% names(args)) {
+    col <- args$col
+  } else {
+    col <- "#800026"
+  }
+  
+  # Axis labels:
+  if ("xlab" %in% names(args)) {
+    xlab <- args$xlab
+  } else {
+    xlab <- expression(paste("Age, ", italic(x)))
+  }
+  if ("ylab" %in% names(args)) {
+    ylab <- args$ylab
+  } else {
+    ylab <- "Product-limit estimator"
+  }
+  
+  # Type of line:
+  if ("type" %in% names(args)) {
+    type <- args$type
+  } else {
+    type <- "l"
+  }
+  
+  # Color
+  if ("col" %in% names(args)) {
+    col <- args$col
+  } else {
+    col <- "#800026"
+  }
+  
+  # Line width:
+  if ("lwd" %in% names(args)) {
+    lwd <- args$lwd
+  } else {
+    lwd <- 1
+  }
+  
+  # Cex.lab:
+  if ("cex.lab" %in% names(args)) {
+    cex.lab <- args$cex.lab
+  } else {
+    cex.lab <- 1
+  }
+  
+  # Cex.axis:
+  if ("cex.axis" %in% names(args)) {
+    cex.axis <- args$cex.axis
+  } else {
+    cex.axis <- 1
+  }
+  
+  if ("xlim" %in% names(args)) {
+    xlim <- args$xlim
+  } else {
+    xlim <- range(agev) * c(0, 1.1)
+  }
+  if ("ylim" %in% names(args)) {
+    ylim <- args$ylim
+  } else {
+    ylim <- c(0, 1)
+  }
+  
+  # Produce plots:
+  op <- par(no.readonly = TRUE)
+  
+  par(mar = c(4, 4, 1, 1), mfrow = c(1, 1))
+  plot(xlim, ylim, col = NA, axes = FALSE, xlab = "", ylab = "")
+  
+  lines(agev, x$ple, type = type, col = col, lwd = lwd)
+  Axis(xlim, side = 1, pos = ylim[1], cex.axis = cex.axis)
+  Axis(ylim, side = 2, pos = xlim[1], las = 2, cex.axis = cex.axis)
+  mtext(ylab, side = 2, line = mar[2] / 2, cex = cex.lab)
+  mtext(xlab, side = 1, line = 2, cex = cex.lab)
+  par(op)
+}
+
+# Plot Product-limit estimator CIs:
+plot.paramDemoPLECIs <- function(x, ...) {
+  # Additional arguments:
+  args <- list(...)
+  
+  # Vector of ages:
+  agev <- x$Ages
+  nage <- length(agev)
+  
+  # mar values:
+  if ("mar" %in% names(args)) {
+    mar <- args$mar
+  } else {
+    mar <- c(2, 4, 1, 1)
+  }
+  
+  # Colors:
+  if ("col" %in% names(args)) {
+    if (length(args$col) < 2) {
+      cols <- c(mean = "#800026", cis = "#FC4E2A")
+    } else {
+      cols <- args$col[1:2]
+      names(cols) <- c("mean", "cis")
+    }
+  } else {
+    cols <- c(mean = "#800026", cis = "#FC4E2A")
+  }
+  
+  # Axis labels:
+  if ("xlab" %in% names(args)) {
+    xlab <- args$xlab
+  } else {
+    xlab <- expression(paste("Age, ", italic(x)))
+  }
+  if ("ylab" %in% names(args)) {
+    ylab <- args$ylab
+  } else {
+    ylab <- "Product-limit estimator"
+  }
+  
+  # Type of line:
+  if ("type" %in% names(args)) {
+    type <- args$type
+  } else {
+    type <- "l"
+  }
+  
+  # Color
+  if ("col" %in% names(args)) {
+    col <- args$col
+  } else {
+    col <- "#800026"
+  }
+  
+  # Line width:
+  if ("lwd" %in% names(args)) {
+    lwd <- args$lwd
+  } else {
+    lwd <- 1
+  }
+  
+  # Cex.lab:
+  if ("cex.lab" %in% names(args)) {
+    cex.lab <- args$cex.lab
+  } else {
+    cex.lab <- 1
+  }
+  
+  # Cex.axis:
+  if ("cex.axis" %in% names(args)) {
+    cex.axis <- args$cex.axis
+  } else {
+    cex.axis <- 1
+  }
+  
+  if ("xlim" %in% names(args)) {
+    xlim <- args$xlim
+  } else {
+    xlim <- range(agev) * c(0, 1.1)
+  }
+  if ("ylim" %in% names(args)) {
+    ylim <- args$ylim
+  } else {
+    ylim <- c(0, 1)
+  }
+  
+  # Produce plots:
+  op <- par(no.readonly = TRUE)
+  
+  par(mar = c(4, 4, 1, 1), mfrow = c(1, 1))
+  plot(xlim, ylim, col = NA, axes = FALSE, xlab = "", ylab = "")
+  
+  polygon(c(agev, rev(agev)), c(x$Lower, rev(x$Upper)), col = cols["cis"], 
+          border = NA)
+  lines(agev, x$ple, type = type, col = cols["mean"], lwd = lwd)
+  Axis(xlim, side = 1, pos = ylim[1], cex.axis = cex.axis)
+  Axis(ylim, side = 2, pos = xlim[1], las = 2, cex.axis = cex.axis)
+  mtext(ylab, side = 2, line = mar[2] / 2, cex = cex.lab)
+  mtext(xlab, side = 1, line = 2, cex = cex.lab)
+  par(op)
+}
+
 # --------------------------------------- #
 # SAMPLING AND OTHER ANCILLARY FUNCTIONS:
 # --------------------------------------- #
@@ -2336,45 +2738,137 @@ SampleRandAge <- function(n, theta, dx = 0.001, model = "GO", shape = "simple",
   return(uages)
 }
 
-# survival and average adult survival:
-FindSilerPars <- function(theta, palpha) {
-  theta[c(2, 3, 5)] <- abs(theta[c(2, 3, 5)])
+# Simulate study:
+SimulateStudy <- function(n, theta, model, shape, studyStart, studySpan,
+                          birthStart, birthUncert = 0, dx = 1/365.25, 
+                          provideSurv = TRUE, checkTheta = TRUE) {
+  # Verify model and shape:
+  .VerifySurvMod(model = model, shape = shape)
   
-  # Extract mortality, survival, etc:
-  demotest <- CalcDemo(theta = theta, shape = "bathtub", minSx = 0.00001, 
-                       type = "survival", summarStats = FALSE)
+  # Extract theta attributes:
+  if (checkTheta) {
+    thetaAttr <- .SetTheta(theta, model = model, shape = shape)
+    theta <- thetaAttr$theta
+  }
   
-  # Vector of demographic variables:
-  paltest <- c(CalcAveDemo(demotest), omega = max(demotest$age))
+  # Check studyStart date:
+  if (is.character(studyStart)) {
+    st <- try(as.Date(studyStart), silent = TRUE)
+    stTest <- grepl("[[:alnum:]]{4}[[:punct:]]{1}[[:alnum:]]{2}[[:punct:]]{1}[[:alnum:]]{2}", studyStart)
+    if (stTest) {
+      stStop <- FALSE
+      studyStart <- as.Date(studyStart)
+    } else {
+      stStop <- TRUE
+    }
+  } else if (class(studyStart) == "Date") {
+    stStop <- FALSE
+  } else {
+    stStop <- TRUE
+  }
+  if (stStop) {
+    stop("Argument 'studyStart' needs to be a date character string formatted as YYYY-MM-DD", call. = FALSE)
+  }
   
-  # max alpha:
-  alphaMax <- max(paltest[3], palpha[3])
+  # Check birthStart date:
+  if (is.character(birthStart)) {
+    st <- try(as.Date(birthStart), silent = TRUE)
+    stTest <- grepl("[[:alnum:]]{4}[[:punct:]]{1}[[:alnum:]]{2}[[:punct:]]{1}[[:alnum:]]{2}", birthStart)
+    if (stTest) {
+      stStop <- FALSE
+      birthStart <- as.Date(birthStart)
+    } else {
+      stStop <- TRUE
+    }
+  } else if (class(birthStart) == "Date") {
+    stStop <- FALSE
+  } else {
+    stStop <- TRUE
+  }
+  if (stStop) {
+    stop("Argument 'birthStart' needs to be a date character string formatted as YYYY-MM-DD", call. = FALSE)
+  }
   
-  # Scale alpha's:
-  paltest[3] <- paltest[3] / alphaMax
-  palpha[3] <- palpha[3] / alphaMax
+  # Calculate parametric survival:
+  if (provideSurv) {
+    x <- seq(0, 1000, dx)
+    Sx <- CalcSurv(theta, x, model = model, shape = shape, checkTheta = FALSE)
+    idsx <- which(Sx >= 0.01)
+    paramSurv <- list(calc = TRUE, 
+                      surv = data.frame(x = x[idsx], surv = Sx[idsx]))
+  } else {
+    paramSurv <- list(calc = FALSE, surv = NA)
+  }
   
-  # max maxAge:
-  omegaMax <- max(paltest[4], palpha[4])
+  # Total number of sampled individuals:
+  nAll <- n * 3
   
-  # Scale max age:
-  paltest[4] <- paltest[4] / omegaMax
-  palpha[4] <- palpha[4] / omegaMax
+  # Set date of study end:
+  studyEnd <- as.Date(julian(studyStart) + 20 * 365.25, origin = "1970-01-01")
   
-  # Difference between
-  diffpa <- palpha - paltest
+  # Simulate ages at death:
+  agesDeath <- SampleRandAge(n = nAll, theta = theta, dx = dx, model = model, 
+                             shape = shape)
   
-  return(sum(diffpa^2))
+  # Simulate times of birth:
+  datesSeq <- seq(julian(birthStart), julian(studyEnd), dx)
+  sampBirth <- sample(x = datesSeq, size = nAll, replace = TRUE)
+  birthDates <- as.Date(sampBirth, origin = "1970-01-01")
+  
+  # Death dates:
+  deathDates <- as.Date(sampBirth + agesDeath * 365.25, origin = "1970-01-01")
+  
+  # Find records within the study span:
+  idincl <- which(deathDates >= studyStart)
+  nincl <- length(idincl)
+  idincl <- sort(idincl[sample(x = 1:nincl, size = n, replace = FALSE)])
+  
+  # subset data:
+  agesDeath <- agesDeath[idincl]
+  birthDates <- birthDates[idincl]
+  deathDates <- deathDates[idincl]
+  
+  # Assign entry dates:
+  entryDates <- birthDates
+  entryDates[which(birthDates < studyStart)] <- studyStart
+  
+  # Find censored data:
+  idCens <- which(deathDates > studyEnd)
+  length(idCens)
+  
+  # Assign departure times:
+  departDates <- deathDates
+  departDates[idCens] <- studyEnd
+  
+  # Assign depart type:
+  departType <- rep("D", n)
+  departType[idCens] <- "C"
+  
+  # Find truncated records:
+  idTrunc <- which(birthDates < studyStart)
+  
+  # Assign uncertain times of birth:
+  minBirthDates <- maxBirthDates <- birthDates
+  if (birthUncert > 0) {
+    birthRange <- runif(n = length(idTrunc), min = 0, max = birthUncert * 365.25)
+    minBirthDates[idTrunc] <- birthDates[idTrunc] - birthRange
+    maxBirthDates[idTrunc] <- birthDates[idTrunc] + birthRange
+  }
+  maxBirthDates[idTrunc][which(maxBirthDates[idTrunc] > studyStart)] <- studyStart
+  
+  # Make data frame:
+  output <- list(data = data.frame(ID = idincl, Birth.Date = birthDates, 
+                                   Min.Birth.Date = minBirthDates,
+                                   Max.Birth.Date = maxBirthDates, 
+                                   Entry.Date = entryDates, 
+                                   Depart.Date = departDates,
+                                   Depart.Type = departType, 
+                                   stringsAsFactors = FALSE),
+                 surv = paramSurv)
+  
+  # Return output:
+  return(output)
 }
 
-# Recursive optimization function:
-myoptim <- function(par, fn, ...) {
-  opt1 <- optim(par = par, fn = fn, ...)
-  ntry <- 0
-  while(opt1$convergence != 0 & ntry < 50) {
-    ntry <- ntry + 1
-    opt1 <- optim(par = opt1$par, fn = fn, ...)
-  }
-  return(opt1)
-}
+
 

@@ -1,5 +1,5 @@
-\name{myoptim}
-\alias{myoptim}
+\name{plot.paramDemoLTCIs}
+\alias{plot.paramDemoLTCIs}
 
 \title{
  FILL UP
@@ -9,12 +9,12 @@
  FILL UP
 }
 
-\usage{myoptim (par, fn, ...)}
+\usage{plot.paramDemoLTCIs (x, demorate = "lx", ...)}
 
 \arguments{
-	\item{ par }{FILL UP}
+	\item{ x }{FILL UP}
 
-	\item{fn }{FILL UP}
+	\item{demorate }{FILL UP}
 
 	\item{... }{FILL UP}
 

@@ -1,5 +1,5 @@
-\name{CalcLifeTable}
-\alias{CalcLifeTable}
+\name{plot.paramDemoKMCIs}
+\alias{plot.paramDemoKMCIs}
 
 \title{
  FILL UP
@@ -9,16 +9,12 @@
  FILL UP
 }
 
-\usage{CalcLifeTable (ageLast, ageFirst = NULL, departType, dx = 1)}
+\usage{plot.paramDemoKMCIs (x, ...)}
 
 \arguments{
-	\item{ ageLast }{FILL UP}
+	\item{ x }{FILL UP}
 
-	\item{ageFirst }{FILL UP}
-
-	\item{departType }{FILL UP}
-
-	\item{dx }{FILL UP}
+	\item{... }{FILL UP}
 
 }
 

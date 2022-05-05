@@ -1,5 +1,5 @@
-\name{CalcLifeTableCIs}
-\alias{CalcLifeTableCIs}
+\name{CalcProductLimitEstCIs}
+\alias{CalcProductLimitEstCIs}
 
 \title{
  FILL UP
@@ -9,20 +9,18 @@
  FILL UP
 }
 
-\usage{CalcLifeTableCIs (ageLast, ageFirst = NULL, departType, nboot = 2000,  alpha = 0.05, dx = 1)}
+\usage{CalcProductLimitEstCIs (ageFirst, ageLast, departType, nboot = 1000, alpha = 0.05)}
 
 \arguments{
-	\item{ ageLast }{FILL UP}
+	\item{ ageFirst }{FILL UP}
 
-	\item{ageFirst }{FILL UP}
+	\item{ageLast }{FILL UP}
 
 	\item{departType }{FILL UP}
 
 	\item{nboot }{FILL UP}
 
-	\item{ alpha }{FILL UP}
-
-	\item{dx }{FILL UP}
+	\item{alpha }{FILL UP}
 
 }
 

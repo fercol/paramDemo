@@ -1,5 +1,5 @@
-\name{plot.lifeTableCIs}
-\alias{plot.lifeTableCIs}
+\name{CalcProductLimitEst}
+\alias{CalcProductLimitEst}
 
 \title{
  FILL UP
@@ -9,14 +9,14 @@
  FILL UP
 }
 
-\usage{plot.lifeTableCIs (x, demorate = "lx", ...)}
+\usage{CalcProductLimitEst (ageLast, ageFirst = NULL, departType)}
 
 \arguments{
-	\item{ x }{FILL UP}
+	\item{ ageLast }{FILL UP}
 
-	\item{demorate }{FILL UP}
+	\item{ageFirst }{FILL UP}
 
-	\item{... }{FILL UP}
+	\item{departType }{FILL UP}
 
 }
 
