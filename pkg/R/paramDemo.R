@@ -203,18 +203,18 @@
     if (shape == "simple") {
       mortfun <- function(theta, x) {
         theta[, "b0"] * theta[, "b1"]^theta[, "b0"] *
-          x^(theta[, "b0"] - 1)
+          (x + 0.003)^(theta[, "b0"] - 1)
       }
     } else if (shape == "Makeham") {
       mortfun <- function(theta, x) {
         theta[, "c"] + theta[, "b0"] * theta[, "b1"]^theta[, "b0"] *
-          x^(theta[, "b0"] - 1)
+          (x + 0.003)^(theta[, "b0"] - 1)
       }
     } else {
       mortfun <- function(theta, x) {
         exp(theta[, "a0"] - theta[, "a1"] * x) + theta[, "c"] +
           theta[, "b0"] * theta[, "b1"]^theta[, "b0"] *
-          x^(theta[, "b0"] - 1)
+          (x + 0.003)^(theta[, "b0"] - 1)
       }
     }
   } else if (model == "LO") {
@@ -264,18 +264,18 @@
     if (shape == "simple") {
       mortfun <- function(theta, x) {
         theta["b0"] * theta["b1"]^theta["b0"] *
-          x^(theta["b0"] - 1)
+          (x + 0.003)^(theta["b0"] - 1)
       }
     } else if (shape == "Makeham") {
       mortfun <- function(theta, x) {
         theta["c"] + theta["b0"] * theta["b1"]^theta["b0"] *
-          x^(theta["b0"] - 1)
+          (x + 0.003)^(theta["b0"] - 1)
       }
     } else {
       mortfun <- function(theta, x) {
         exp(theta["a0"] - theta["a1"] * x) + theta["c"] +
           theta["b0"] * theta["b1"]^theta["b0"] *
-          x^(theta["b0"] - 1)
+          (x + 0.003)^(theta["b0"] - 1)
       }
     }
   } else if (model == "LO") {
