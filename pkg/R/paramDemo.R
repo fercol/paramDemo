@@ -1490,24 +1490,24 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
     nin <- length(idNx)
     
     # Extract ages and departType:
-    xf <- ageFirst[idNx]
-    xl <- ageLast[idNx]
-    dt <- departType[idNx]
+    xFirst <- ageFirst[idNx]
+    xLast <- ageLast[idNx]
+    dType <- departType[idNx]
     
     # Index for individuals dying within interval:
-    idDx <- which(xl < agev[ix] + dx & dt == "D")
+    idDx <- which(xLast < agev[ix] + dx & dType == "D")
     
     # Index of truncated in interval:
-    idtr <- which(xf >= agev[ix])
+    idtr <- which(xFirst >= agev[ix])
     
     # Index of censored in the interval:
-    idce <- which(xl < agev[ix] + dx & dt == "C")
+    idce <- which(xLast < agev[ix] + dx & dType == "C")
     
     # Porportion lived within interval:
     intr <- rep(0, nin)
     ince <- rep(dx, nin)
-    intr[idtr] <- xf[idtr] - agev[ix]
-    ince[idce] <- agev[ix] + dx - xl[idce]
+    intr[idtr] <- xFirst[idtr] - agev[ix]
+    ince[idce] <- agev[ix] + dx - xLast[idce]
     lived <- (ince - intr) / dx
     
     # Fill in Nx:
@@ -1517,13 +1517,13 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
     Dx[ix] <- length(idDx)
     
     # # proportion of truncation in interval:
-    # trp <- xf - agev[ix]
+    # trp <- xFirst - agev[ix]
     # trp[trp < 0] <- 0
     # 
     # # proportion of censoring:
     # cep <- agev[ix] + dx - xl
     # cep[cep < 0] <- 0
-    # cep[dt == "D"] <- 0
+    # cep[dType == "D"] <- 0
     # 
     # # Calculate exposures:
     # nexp <- 1 - trp - cep
@@ -1531,13 +1531,13 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
     # 
     # # B) DEATHS:
     # # Calculate total deaths in the interval:
-    # idDx <- which(dt == "D" & xl < agev[ix] + dx)
+    # idDx <- which(dType == "D" & xl < agev[ix] + dx)
     # Dx[ix] <- length(idDx)
     # # Dx[ix] <- sum(nexp[idDx])
     
     # C) PROPORTION LIVED BY THOSE THAT DIED IN INTERVAL:
     if (Dx[ix] > 1) {
-      ylived <- xl[idDx] - agev[ix]
+      ylived <- xLast[idDx] - agev[ix]
       ax[ix] <- sum(ylived) / Dx[ix]
     } else {
       ax[ix] <- 0
