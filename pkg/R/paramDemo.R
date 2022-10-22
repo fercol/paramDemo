@@ -1483,41 +1483,64 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
   
   # Outputs:
   Nx <- Dx <- ax <- rep(0, nage)
-  for (xx in 1:nage) {
+  for (ix in 1:nage) {
     # A) EXPOSURES:
     # Find how many entered the interval (including truncated):
-    idNx <- which(ageFirst < agev[xx] + dx & ageLast >= agev[xx])
+    idNx <- which(ageFirst < agev[ix] + dx & ageLast >= agev[ix])
+    nin <- length(idNx)
     
     # Extract ages and departType:
     xf <- ageFirst[idNx]
     xl <- ageLast[idNx]
     dt <- departType[idNx]
     
-    # proportion of truncation in interval:
-    trp <- xf - agev[xx]
-    trp[trp < 0] <- 0
+    # Index for individuals dying within interval:
+    idDx <- which(xl < agev[ix] + 1 & dt == "D")
     
-    # proportion of censoring:
-    cep <- agev[xx] + dx - xl
-    cep[cep < 0] <- 0
-    cep[dt == "D"] <- 0
+    # Index of truncated in interval:
+    idtr <- which(xf >= agev[ix])
     
-    # Calculate exposures:
-    nexp <- 1 - trp - cep
-    Nx[xx] <- sum(nexp)
+    # Index of censored in the interval:
+    idce <- which(xl < agev[ix] + 1 & dt == "C")
     
-    # B) DEATHS:
-    # Calculate total deaths in the interval:
-    idDx <- which(dt == "D" & xl < agev[xx] + dx)
-    # Dx[xx] <- length(idDx)
-    Dx[xx] <- sum(nexp[idDx])
+    # Porportion lived within interval:
+    intr <- rep(0, nin)
+    ince <- rep(1, nin)
+    intr[idtr] <- xf[idtr] - agev[ix]
+    ince[idce] <- agev[ix] + 1 - xl[idce]
+    lived <- ince - intr
+    
+    # Fill in Nx:
+    Nx[ix] <- sum(lived)
+    
+    # Fill in Dx:
+    Dx[ix] <- length(idDx)
+    
+    # # proportion of truncation in interval:
+    # trp <- xf - agev[ix]
+    # trp[trp < 0] <- 0
+    # 
+    # # proportion of censoring:
+    # cep <- agev[ix] + dx - xl
+    # cep[cep < 0] <- 0
+    # cep[dt == "D"] <- 0
+    # 
+    # # Calculate exposures:
+    # nexp <- 1 - trp - cep
+    # Nx[ix] <- sum(nexp)
+    # 
+    # # B) DEATHS:
+    # # Calculate total deaths in the interval:
+    # idDx <- which(dt == "D" & xl < agev[ix] + dx)
+    # Dx[ix] <- length(idDx)
+    # # Dx[ix] <- sum(nexp[idDx])
     
     # C) PROPORTION LIVED BY THOSE THAT DIED IN INTERVAL:
-    if (Dx[xx] > 1) {
-      ylived <- xl[idDx] - agev[xx]
-      ax[xx] <- sum(ylived) / Dx[xx]
+    if (Dx[ix] > 1) {
+      ylived <- xl[idDx] - agev[ix]
+      ax[ix] <- sum(ylived) / Dx[ix]
     } else {
-      ax[xx] <- 0
+      ax[ix] <- 0
     }
   }
   
@@ -1545,8 +1568,6 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
   # Remaining life expectancy after age x:
   ex <- Tx / lx 
   ex[which(is.na(ex))] <- 0
-  # (Note: follows on the correction for Lx)
-  # ex <- Tx / Nx
   
   # Life-table:
   lt <- cbind(Ages = agev, Nx = Nx, Dx = Dx, lx = lx, px = px,
@@ -2144,7 +2165,7 @@ CalcKaplanMeierCIs <- function(ageLast, departType,
   return(kmcilist)
 }
 
-# Plot Kaplan-Meie:
+# Plot Kaplan-Meier:
 plot.paramDemoKM <- function(x, ...) {
   # Additional arguments:
   args <- list(...)
