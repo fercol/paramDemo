@@ -1495,20 +1495,20 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
     dt <- departType[idNx]
     
     # Index for individuals dying within interval:
-    idDx <- which(xl < agev[ix] + 1 & dt == "D")
+    idDx <- which(xl < agev[ix] + dx & dt == "D")
     
     # Index of truncated in interval:
     idtr <- which(xf >= agev[ix])
     
     # Index of censored in the interval:
-    idce <- which(xl < agev[ix] + 1 & dt == "C")
+    idce <- which(xl < agev[ix] + dx & dt == "C")
     
     # Porportion lived within interval:
     intr <- rep(0, nin)
-    ince <- rep(1, nin)
+    ince <- rep(dx, nin)
     intr[idtr] <- xf[idtr] - agev[ix]
-    ince[idce] <- agev[ix] + 1 - xl[idce]
-    lived <- ince - intr
+    ince[idce] <- agev[ix] + dx - xl[idce]
+    lived <- (ince - intr) / dx
     
     # Fill in Nx:
     Nx[ix] <- sum(lived)
