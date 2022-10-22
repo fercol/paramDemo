@@ -1507,7 +1507,8 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
     intr <- rep(0, nin)
     ince <- rep(dx, nin)
     intr[idtr] <- xFirst[idtr] - agev[ix]
-    ince[idce] <- agev[ix] + dx - xLast[idce]
+    # ince[idce] <- agev[ix] + dx - xLast[idce]
+    ince[idce] <- xLast[idce] - agev[ix]
     lived <- (ince - intr) / dx
     
     # Fill in Nx:
