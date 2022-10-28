@@ -1570,12 +1570,13 @@ CalcLifeTableCIs <- function(ageLast, ageFirst = NULL, departType,
   }
   
   # Unit age vector for that sex:
-  agev <- 0:ceiling(max(ageLast))
+  agev <- seq(from = 0, to = ceiling(max(ageLast[which(departType == "D")])), 
+              by = dx)
   nage <- length(agev)
   
   # Mean life table:
   ltMean <- CalcLifeTable(ageLast = ageLast, ageFirst = ageFirst, 
-                          departType = departType)
+                          departType = departType, dx = dx)
   
   # Labels for demographic rates:
   demRates <- c("lx", "qx", "px", "ex")
