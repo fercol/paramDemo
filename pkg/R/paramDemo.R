@@ -1515,7 +1515,8 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
     Nx[ix] <- sum(lived)
     
     # Fill in Dx:
-    Dx[ix] <- length(idDx)
+    # Dx[ix] <- length(idDx)
+    Dx[ix] <- sum(lived[idDx])
     
     # # proportion of truncation in interval:
     # trp <- xFirst - agev[ix]
@@ -1539,7 +1540,8 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
     # C) PROPORTION LIVED BY THOSE THAT DIED IN INTERVAL:
     if (Dx[ix] > 1) {
       ylived <- xLast[idDx] - agev[ix]
-      ax[ix] <- sum(ylived) / Dx[ix]
+      # ax[ix] <- sum(ylived) / Dx[ix]
+      ax[ix] <- sum(ylived) / dx / nDx
     } else {
       ax[ix] <- 0
     }
