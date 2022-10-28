@@ -1496,6 +1496,7 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
     
     # Index for individuals dying within interval:
     idDx <- which(xLast < agev[ix] + dx & dType == "D")
+    nDx <- length(idDx)
     
     # Index of truncated in interval:
     idtr <- which(xFirst >= agev[ix])
