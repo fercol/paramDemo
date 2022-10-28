@@ -1507,35 +1507,16 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
     intr <- rep(0, nin)
     ince <- rep(dx, nin)
     intr[idtr] <- xFirst[idtr] - agev[ix]
-    # ince[idce] <- agev[ix] + dx - xLast[idce]
     ince[idce] <- xLast[idce] - agev[ix]
     lived <- (ince - intr) / dx
     
     # Fill in Nx:
     Nx[ix] <- sum(lived)
     
+    # B) DEATHS:
     # Fill in Dx:
-    # Dx[ix] <- length(idDx)
     Dx[ix] <- sum(lived[idDx])
     
-    # # proportion of truncation in interval:
-    # trp <- xFirst - agev[ix]
-    # trp[trp < 0] <- 0
-    # 
-    # # proportion of censoring:
-    # cep <- agev[ix] + dx - xl
-    # cep[cep < 0] <- 0
-    # cep[dType == "D"] <- 0
-    # 
-    # # Calculate exposures:
-    # nexp <- 1 - trp - cep
-    # Nx[ix] <- sum(nexp)
-    # 
-    # # B) DEATHS:
-    # # Calculate total deaths in the interval:
-    # idDx <- which(dType == "D" & xl < agev[ix] + dx)
-    # Dx[ix] <- length(idDx)
-    # # Dx[ix] <- sum(nexp[idDx])
     
     # C) PROPORTION LIVED BY THOSE THAT DIED IN INTERVAL:
     if (Dx[ix] > 1) {
