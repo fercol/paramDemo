@@ -2398,8 +2398,15 @@ CalcProductLimitEst <- function(ageLast, ageFirst = NULL, departType) {
   idDead <- which(recTab[, "D"] > 0)
   ple <- cumprod(1 - c(Dx / Nx)[idDead])
   
+  # Add age 0:
+  Ages <- unAllAges[idDead]
+  if (Ages[1] > 0) {
+    Ages <- c(0, Ages)
+    ple <- c(1, ple)
+  }
+  
   # Fill up table:
-  pleTab <- data.frame(Ages = unAllAges[idDead], ple = ple)
+  pleTab <- data.frame(Ages = Ages, ple = ple)
   class(pleTab) <- c("paramDemoPLE")
   return(pleTab)
 }
@@ -2519,7 +2526,15 @@ CalcProductLimitEstCIs <- function(ageFirst, ageLast, departType, nboot = 1000,
                    na.rm = TRUE))
   colnames(pleci) <- c("Lower", "Upper")
   
-  pleboot <- data.frame(Ages = unAllAges[idDead], ple = pleNB, pleci)
+  # Add age 0:
+  Ages <- unAllAges[idDead]
+  if (Ages[1] > 0) {
+    Ages <- c(0, Ages)
+    pleNB <- c(1, pleNB)
+    pleci <- rbind(1, pleci)
+  }
+  
+  pleboot <- data.frame(Ages = Ages, ple = pleNB, pleci)
   class(pleboot) <- "paramDemoPLECIs"
   return(pleboot)
 }
