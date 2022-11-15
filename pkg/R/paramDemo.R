@@ -37,10 +37,11 @@
 
 # Verify fertility model:
 .VerifyFertMod <- function(modelFert) {
-  if (!modelFert %in% sprintf("M%s", 1:3)) {
-    stop("Wrong 'modelFert' specification.\n",
-         "       Alternatives are 'M1', 'M2', or 'M3'.", call. = FALSE)
-    
+  fMods <- c("quadratic", "PeristeraKostaki", "ColcheroMuller", 
+             "Hadwiger", "gamma", "beta")
+  if (!modelFert %in% fMods) {
+    stop("Wrong 'modelFert' specification. See help file for fertility models.",
+         call. = FALSE)
   }
 }
 
@@ -121,19 +122,28 @@
 }
 
 # Fertility:
-.SetBeta <- function(beta, modelFert = "M1") {
+.SetBeta <- function(beta, modelFert = "quadratic") {
   if (is.null(beta)) {
     stop("Missing 'beta' parameter vector or matrix.\n", call. = FALSE)
   } 
-  if (modelFert == "M1") {
+  if (modelFert == "quadratic") {
     nBe <- 3
     lowBe <- c(0, 0, 0)
-  } else if (modelFert == "M2") {
+  } else if (modelFert == "PeristeraKostaki") {
     nBe <- 4
-    lowBe <- c(0, 0, -Inf, 0)
-  } else if (modelFert == "M3") {
+    lowBe <- c(0, 0, 0, 0)
+  } else if (modelFert == "ColcheroMuller") {
     nBe <- 4
     lowBe <- c(0, 0, 0, -Inf)
+  } else if (modelFert == "Hadwiger") {
+    nBe <- 3
+    lowBe <- c(0, 0, 0)
+  } else if (modelFert == "gamma") {
+    nBe <- 3
+    lowBe <- c(0, 0, 0)
+  } else if (modelFert == "beta") {
+    nBe <- 5
+    lowBe <- rep(0, 5)
   }
   nameBe <- sprintf("b%s", 1:nBe - 1)
   if (is.matrix(beta)) {
@@ -145,7 +155,8 @@
     clBe <- "vector"
     stBe <- "elements"
   } else {
-    stop("Parameters beta should either be of class matrix\nor a numeric vector.\n", call. = FALSE)
+    stop("The beta parameters should either be of class matrix", 
+         " or a numeric vector.\n", call. = FALSE)
   }
   if (nbeUser != nBe) {
     stop(sprintf("The beta %s should have %s %s.\n", clBe, nBe, stBe),
@@ -166,12 +177,14 @@
     BETLOW <- all(beta >= lowBe)
   }
   if(!BETLOW) {
-    stop(sprintf("Some beta parameters are below their lower bound.\n %s.\n",paste(sprintf("min(%s) = %s", nameBe, lowBe), collapse = ", ")),
+    stop(sprintf("Some beta parameters are below their lower bound.\n %s.\n",
+                 paste(sprintf("min(%s) = %s", nameBe, lowBe), 
+                       collapse = ", ")),
          call. = FALSE)
     
   }
   defaultBeta  <- list(beta = beta, p = nBe, name = nameBe,
-                        low = lowBe)
+                       low = lowBe)
   attr(defaultBeta, "model") = modelFert
   return(defaultBeta)
 }
@@ -429,44 +442,88 @@
 }
 
 # c) Fertility:
-.DefineFertilityNumeric <- function(modelFert = "M1") {
-  if (modelFert == "M1") {
+.DefineFertilityNumeric <- function(modelFert = "quadratic") {
+  if (modelFert == "quadratic") {
     fertfun <- function(beta, x) {
       fert <- beta["b0"] * exp(-beta["b1"] * (x - beta["b2"])^2)
       return(fert)
     }
-  } else if (modelFert == "M2") {
+  } else if (modelFert == "PeristeraKostaki") {
     fertfun <- function(beta, x) {
-      fert <- beta["b0"] * exp(-beta["b1"] * (x - beta["b2"])^2) /
-        (1 + exp(-(beta["b3"] * (x - beta["b2"]))))
+      be1 <- x * 0 + beta["b1a"]
+      be1[which(x > beta["b2"])] <- beta["b1b"]
+      fert <- beta["b0"] * exp(-((x - beta["b2"]) / bet1)^2)
       return(fert)
     }
-  } else if (modelFert == "M3") {
+  } else if (modelFert == "ColcheroMuller") {
     fertfun <- function(beta, x) {
       fert <- beta["b0"] * exp(-beta["b1"] * (x - beta["b2"])^2 +
-                   beta["b3"] * 1/(x + 1))
+                                 beta["b3"] * 1/(x + 1))
+      return(fert)
+    }
+  } else if (modelFert == "Hadwiger") {
+    fertfun <- function(beta, x) {
+      fert <- (beta["b0"] * beta["b1"])/beta["b2"] * 
+        (beta["b2"]/x)^(3/2) * exp(-beta["b1"]^2 * (beta["b2"] / x + 
+                                                      x / beta["b2"] - 2))
+      return(fert)
+    }
+  } else if (modelFert == "gamma") {
+    fertfun <- function(beta, x) {
+      fert <- beta["b0"] * dgamma(x, shape = beta["b1"], rate = beta["b2"])
+      return(fert)
+    }
+  } else if (modelFert == "beta") {
+    fertfun <- function(beta, x) {
+      fert <- beta["b0"] * ((x - beta["b3"])^(beta["b1"] - 1) * 
+                              (beta["b4"] - x)^(beta["b2"] - 1)) / 
+        ((beta["b4"] - beta["b3"])^(beta["b1"] + beta["b2"] - 1) * 
+           beta(beta["b1"], beta["b2"]))
       return(fert)
     }
   }
   return(fertfun)
 }
 
-.DefineFertilityMatrix <- function(modelFert = "M1") {
-  if (modelFert == "M1") {
+.DefineFertilityMatrix <- function(modelFert = "quadratic") {
+  if (modelFert == "quadratic") {
     fertfun <- function(beta, x) {
       fert <- beta[, "b0"] * exp(-beta[, "b1"] * (x - beta[, "b2"])^2)
       return(fert)
     }
-  } else if (modelFert == "M2") {
+  } else if (modelFert == "PeristeraKostaki") {
     fertfun <- function(beta, x) {
-      fert <- beta[, "b0"] * exp(-beta[, "b1"] * (x - beta[, "b2"])^2) /
-        (1 + exp(-(beta[, "b3"] * (x - beta[, "b2"]))))
+      be1 <- x * 0 + beta[, "b1a"]
+      be1[which(x > beta[, "b2"])] <- beta[, "b1b"]
+      fert <- beta[, "b0"] * exp(-((x - beta[, "b2"]) / bet1)^2)
       return(fert)
     }
-  } else if (modelFert == "M3") {
+  } else if (modelFert == "ColcheroMuller") {
     fertfun <- function(beta, x) {
       fert <- beta[, "b0"] * exp(-beta[, "b1"] * (x - beta[, "b2"])^2 +
-                   beta[, "b3"] * 1/(x + 1))
+                                   beta[, "b3"] * 1/(x + 1))
+      return(fert)
+    }
+  } else if (modelFert == "Hadwiger") {
+    fertfun <- function(beta, x) {
+      fert <- (beta[, "b0"] * beta[, "b1"])/beta[, "b2"] * 
+        (beta[, "b2"]/x)^(3/2) * exp(-beta[, "b1"]^2 * 
+                                       (beta[, "b2"] / x + 
+                                          x / beta[, "b2"] - 2))
+      return(fert)
+    }
+  } else if (modelFert == "gamma") {
+    fertfun <- function(beta, x) {
+      fert <- beta[, "b0"] * dgamma(x, shape = beta[, "b1"], 
+                                    rate = beta[, "b2"])
+      return(fert)
+    }
+  } else if (modelFert == "beta") {
+    fertfun <- function(beta, x) {
+      fert <- beta[, "b0"] * ((x - beta[, "b3"])^(beta[, "b1"] - 1) * 
+                                (beta[, "b4"] - x)^(beta[, "b2"] - 1)) / 
+        ((beta[, "b4"] - beta[, "b3"])^(beta[, "b1"] + beta[, "b2"] - 1) * 
+           beta(beta[, "b1"], beta[, "b2"]))
       return(fert)
     }
   }
@@ -795,7 +852,7 @@ CalcSurv <- function(theta, x, model = "GO", shape = "simple",
 }
 
 # Calculate Fertility:
-CalcFert <- function(beta, x, modelFert = "M1", checkBeta = TRUE) {
+CalcFert <- function(beta, x, modelFert = "quadratic", checkBeta = TRUE) {
 
   # Verify fertility model:
   .VerifyFertMod(modelFert = modelFert)
@@ -821,7 +878,7 @@ CalcFert <- function(beta, x, modelFert = "M1", checkBeta = TRUE) {
 # --------------------------------------------- #
 # Main demographic function:
 CalcDemo <- function(theta = NULL, beta = NULL, x = NULL, dx = NULL, 
-                     model = "GO", shape = "simple", modelFert = "M1", 
+                     model = "GO", shape = "simple", modelFert = "quadratic", 
                      type = "both", minSx = 0.01, summarStats = TRUE, 
                      ageMatur = 0, maxAge = NULL, agesAR = NULL, 
                      SxValsAR = NULL) {
@@ -976,7 +1033,8 @@ CalcDemo <- function(theta = NULL, beta = NULL, x = NULL, dx = NULL,
     # -------------------------------- #
     if (is.null(x)) {
       if (is.null(maxAge)) {
-        stop("Missing argument 'x' for vector of ages, or argument for maximum age 'maxAge'. Provide either.", call. = FALSE)
+        stop("Missing argument 'x' for vector of ages, or argument for maximum",
+        " age 'maxAge'. Provide either.", call. = FALSE)
       } else {
         if (is.null(dx)) dx <- 0.01
         x <- seq(ageMatur, maxAge, dx)
@@ -1329,7 +1387,7 @@ CalcAgeingRate <- function(theta, x, model = "GO", shape = "simple",
 }
 
 # Calculate age at maximum Fertility:
-CalcAgeMaxFert <- function(beta, modelFert = "M1", ageMatur = 0, 
+CalcAgeMaxFert <- function(beta, modelFert = "quadratic", ageMatur = 0, 
                            maxAge = 100) {
   
   # Verify fertility model:
@@ -1346,36 +1404,12 @@ CalcAgeMaxFert <- function(beta, modelFert = "M1", ageMatur = 0,
   
   # Find age at maximum Fertility:
   xv <- seq(0, maxAge - ageMatur, 0.0001)
-  if (modelFert == "M1") {
+  if (modelFert %in% c("quadratic", "PeristeraKostaki")) {
     xm <- beta["b2"]
     dd <- 0
     ii <- 0
-  } else if (modelFert %in% c("M2", "M3")) {
-    if (modelFert == "M2") {
-      dfdx <- function(x, beta) {
-        w <- x - beta["b2"]
-        u <- exp(-beta["b1"] * w^2)
-        z <- exp(-beta["b3"] * w)
-        v <- 1 + z
-        du <- -2 * beta["b1"] * w * u
-        dv <- -beta["b3"] * z
-        df <- (du * v - u * dv) / v^2
-        return(df)
-      }
-      dfdx2 <- function(x, beta) {
-        w <- x - beta["b2"]
-        u <- exp(-beta["b1"] * w^2)
-        z <- exp(-beta["b3"] * w)
-        v <- 1 + z
-        du <- -2 * beta["b1"] * w * u
-        dv <- -beta["b3"] * z
-        ddu <- (-2 * beta["b1"] + (-2 * beta["b1"] * w)^2) * u
-        ddv <- beta["b3"]^2 * z
-        df <- (du * v - u * dv) / v^2
-        df2 <- (ddu * v - u * ddv) / v^2 - 2 * dv / v * df
-        return(df2)
-      }
-    } else {
+  } else if (modelFert %in% c("ColcheroMuller", "Hadwiger")) {
+    if (modelFert == "ColcheroMuller") {
       dfdx <- function(x0, beta) {
         x0^3 + x0^2 * (2 - beta["b2"]) + x0 * (1 - 2 * beta["b2"]) +
           beta["b3"] / (2 * beta["b1"]) - beta["b2"]
@@ -1383,8 +1417,18 @@ CalcAgeMaxFert <- function(beta, modelFert = "M1", ageMatur = 0,
       dfdx2 <- function(x0, beta) {
         3 * x0^2 + 2 * x0 * (2 - beta["b2"]) + 1 - 2 * beta["b2"]
       }
+    } else {
+      dfdx <- function(x, beta) {
+        3/2 * x^(-1) - beta["b1"]^2 * beta["b2"] * x^(-2) + 
+          beta["b1"]^2 / beta["b2"]
+      }
+      dfdx2 <- function(x, beta) {
+        -3 / 2 * x^(-2) + 2 * beta["b1"]^2 * beta["b2"] * x^(-3)
+      }
     }
-    id0 <- which(sign(dfdx(xv[-length(xv)], beta)) != sign(dfdx(xv[-1], beta)))
+
+    id0 <- which(sign(dfdx(xv[-length(xv)], beta)) != 
+                   sign(dfdx(xv[-1], beta)))
     if (length(id0) > 1) {
       id0 <- id0[which(abs(xv[id0] - beta["b2"]) ==
                          min(abs(xv[id0] - beta["b2"])))]
@@ -1403,6 +1447,23 @@ CalcAgeMaxFert <- function(beta, modelFert = "M1", ageMatur = 0,
     } else {
       xm <- NA
     }
+  } else if (modelFert == "gamma") {
+    if (beta["b1"] > 1) {
+      xm <- (beta["b1"] - 1) * beta["b2"]
+    } else {
+      xm <- 0
+    }
+    dd <- 0
+    ii <- 0
+  } else if (modelFert == "beta") {
+    if (beta["b1"] > 1 & beta["b2"] > 1) {
+      xm <- ((beta["b1"] - 1) * beta["b4"] + (beta["b2"] -1) * beta["b3"]) /
+        (beta["b1"] + beta["b2"] + 2)
+    } else {
+      xm <- 0
+    }
+    dd <- 0
+    ii <- 0
   }
   maxFert <- .CalcFert(beta, xm)
   maxFertv <- c(xm + ageMatur, maxFert, dd, ii, ageMatur)
@@ -1487,7 +1548,7 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
     # A) EXPOSURES:
     # Find how many entered the interval (including truncated):
     idNx <- which(ageFirst < agev[ix] + dx & ageLast >= agev[ix])
-    nin <- length(idNx)
+    nNx <- length(idNx)
     
     # Extract ages and departType:
     xFirst <- ageFirst[idNx]
@@ -1505,8 +1566,8 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
     idce <- which(xLast < agev[ix] + dx & dType == "C")
     
     # Porportion lived within interval:
-    intr <- rep(0, nin)
-    ince <- rep(dx, nin)
+    intr <- rep(0, nNx)
+    ince <- rep(dx, nNx)
     intr[idtr] <- xFirst[idtr] - agev[ix]
     ince[idce] <- xLast[idce] - agev[ix]
     lived <- (ince - intr) / dx
@@ -1516,7 +1577,8 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
     
     # B) DEATHS:
     # Fill in Dx:
-    Dx[ix] <- sum(lived[idDx])
+    # Dx[ix] <- sum(lived[idDx])
+    Dx[ix] <- min(nDx, Nx[ix])
     
     
     # C) PROPORTION LIVED BY THOSE THAT DIED IN INTERVAL:
@@ -2355,7 +2417,14 @@ plot.paramDemoKMCIs <- function(x, ...) {
 # ------------------------ #
 # Simple Product-limit estimator function:
 CalcProductLimitEst <- function(ageLast, ageFirst = NULL, departType) {
+  # Number of individuals in dataset:
   n <- length(ageLast)
+  
+  # Find records with same first and last age:
+  idsame <- which(ageLast == ageFirst)
+  
+  # Increase last age by one day:
+  ageLast[idsame] <- ageLast[idsame] + 1/365.25
   
   # create identities and age list:
   if (is.null(ageFirst)) {
@@ -2381,7 +2450,8 @@ CalcProductLimitEst <- function(ageLast, ageFirst = NULL, departType) {
   recTab <- matrix(0, nages, ntypes, dimnames = list(ageNames, ageTypes))
   for (at in ageTypes) {
     idtemp <- rep(0, nAllAges)
-    idtemp[which(allAgesId == at)] <- 1
+    idEqAt <- which(allAgesId == at)
+    idtemp[idEqAt] <- 1
     ttemp <- table(allAges, idtemp)
     temp <- c(ttemp[, 2])
     recTab[, at] <- temp
@@ -2417,7 +2487,14 @@ CalcProductLimitEstCIs <- function(ageFirst, ageLast, departType, nboot = 1000,
   # =================== #
   # ==== NON-BOOT: ====
   # =================== #
+  # Number of individuals in dataset:
   n <- length(ageLast)
+  
+  # Find records with same first and last age:
+  idsame <- which(ageLast == ageFirst)
+  
+  # Increase last age by one day:
+  ageLast[idsame] <- ageLast[idsame] + 1/365.25
   
   # create identities and age list:
   if (is.null(ageFirst)) {
@@ -2726,8 +2803,11 @@ plot.paramDemoPLECIs <- function(x, ...) {
   par(mar = c(4, 4, 1, 1), mfrow = c(1, 1))
   plot(xlim, ylim, col = NA, axes = FALSE, xlab = "", ylab = "")
   
-  polygon(c(agev, rev(agev)), c(x$Lower, rev(x$Upper)), col = cols["cis"], 
-          border = NA)
+  # polygon(c(agev, rev(agev)), c(x$Lower, rev(x$Upper)), col = cols["cis"], 
+  #         border = NA)
+  for (ici in c("Lower", "Upper")) {
+    lines(agev, x[[ici]], type = type, col = cols["cis"], lwd = lwd, lty = 2)
+  }
   lines(agev, x$ple, type = type, col = cols["mean"], lwd = lwd)
   Axis(xlim, side = 1, pos = ylim[1], cex.axis = cex.axis)
   Axis(ylim, side = 2, pos = xlim[1], las = 2, cex.axis = cex.axis)
