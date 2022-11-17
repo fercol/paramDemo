@@ -1449,7 +1449,7 @@ CalcAgeMaxFert <- function(beta, modelFert = "quadratic", ageMatur = 0,
     }
   } else if (modelFert == "gamma") {
     if (beta["b1"] > 1) {
-      xm <- (beta["b1"] - 1) * beta["b2"]
+      xm <- (beta["b1"] - 1) / beta["b2"]
     } else {
       xm <- 0
     }
@@ -1457,10 +1457,18 @@ CalcAgeMaxFert <- function(beta, modelFert = "quadratic", ageMatur = 0,
     ii <- 0
   } else if (modelFert == "beta") {
     if (beta["b1"] > 1 & beta["b2"] > 1) {
-      xm <- ((beta["b1"] - 1) * beta["b4"] + (beta["b2"] -1) * beta["b3"]) /
-        (beta["b1"] + beta["b2"] + 2)
+      xm <- beta["b3"] + (beta["b1"] - 1) / (beta["b1"] + beta["b2"] - 2) * 
+        (beta["b4"] - beta["b3"])
+    } else if (beta["b1"] < 1 & beta["b2"] < 1) {
+      xm <- beta[c("b3", "b4")]
+    } else if ((beta["b1"] < 1 & beta["b2"] >= 1) | 
+               (beta["b1"] == 1 & beta["b2"] > 1)) {
+      xm <- beta["b3"]
+    } else if ((beta["b1"] >= 1 & beta["b2"] < 1) | 
+               (beta["b1"] > 1 & beta["b2"] == 1)) {
+      xm <- beta["b4"]
     } else {
-      xm <- 0
+      xm <- NA
     }
     dd <- 0
     ii <- 0
@@ -1578,7 +1586,7 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
     # B) DEATHS:
     # Fill in Dx:
     # Dx[ix] <- sum(lived[idDx])
-    Dx[ix] <- min(nDx, Nx[ix])
+    Dx[ix] <- nDx
     
     
     # C) PROPORTION LIVED BY THOSE THAT DIED IN INTERVAL:
@@ -2101,316 +2109,316 @@ plot.paramDemoLTCIs <- function(x, demorate = "lx", ...) {
 # KAPLAN-MEIER FUNCTIONS:
 # ----------------------- #
 # Simple Kaplan-Meier curve:
-CalcKaplanMeier <- function(ageLast, departType) {
-  # All ages:
-  allAges <- sort(unique(ageLast))
-  nAllAges <- length(allAges)
-  ageCounts <- rep(0, nAllAges)
-  names(ageCounts) <- allAges
-  
-  # Ages at death:
-  idDead <- which(departType == "D")
-  temptab <- c(table(ageLast[idDead]))
-  tabAgeDeath <- ageCounts
-  tabAgeDeath[names(temptab)] <- temptab
-  idDx <- which(tabAgeDeath > 0)
-  
-  # Ages at trunctation:
-  if (is.null(ageFirst)) {
-    cumTrunc <- ageCounts
-  } else {
-    temptab <- table(ageFirst[idAgeFirst])
-    tabAgeTrunc <- ageCounts
-    tabAgeTrunc[names(temptab)] <- temptab
-    cumTrunc <- rev(cumsum(rev(tabAgeTrunc)))
-  }
-  
-  # All ages at censoring:
-  temptab <- c(table(ageLast))
-  tabAgeLast <- ageCounts
-  tabAgeLast[names(temptab)] <- temptab
-  cumtemp <- rev(cumsum(rev(tabAgeLast)))
-  cumLast <- ageCounts
-  cumLast <- cumtemp
-  
-  # Exposures:
-  Nx <- cumLast[idDx]
-  Dx <- tabAgeDeath[idDx]
-  km <- cumprod(1 - Dx / Nx)
-  if (allAges[1] > 0) {
-    Nx <- c(Nx[1], Nx)
-    Dx <- c(0, Dx)
-    km <- c(1, km)
-    ages <- c(0, allAges[idDx])
-  } else {
-    ages <- allAges[idDx]
-  }
-  kmTab <- data.frame(Ages = ages, KM = km, Nx = Nx, Dx = Dx)
-  class(kmTab) <- c("paramDemoKM")
-  return(kmTab)
-}
-
+# CalcKaplanMeier <- function(ageLast, departType) {
+#   # All ages:
+#   allAges <- sort(unique(ageLast))
+#   nAllAges <- length(allAges)
+#   ageCounts <- rep(0, nAllAges)
+#   names(ageCounts) <- allAges
+#   
+#   # Ages at death:
+#   idDead <- which(departType == "D")
+#   temptab <- c(table(ageLast[idDead]))
+#   tabAgeDeath <- ageCounts
+#   tabAgeDeath[names(temptab)] <- temptab
+#   idDx <- which(tabAgeDeath > 0)
+#   
+#   # Ages at trunctation:
+#   if (is.null(ageFirst)) {
+#     cumTrunc <- ageCounts
+#   } else {
+#     temptab <- table(ageFirst[idAgeFirst])
+#     tabAgeTrunc <- ageCounts
+#     tabAgeTrunc[names(temptab)] <- temptab
+#     cumTrunc <- rev(cumsum(rev(tabAgeTrunc)))
+#   }
+#   
+#   # All ages at censoring:
+#   temptab <- c(table(ageLast))
+#   tabAgeLast <- ageCounts
+#   tabAgeLast[names(temptab)] <- temptab
+#   cumtemp <- rev(cumsum(rev(tabAgeLast)))
+#   cumLast <- ageCounts
+#   cumLast <- cumtemp
+#   
+#   # Exposures:
+#   Nx <- cumLast[idDx]
+#   Dx <- tabAgeDeath[idDx]
+#   km <- cumprod(1 - Dx / Nx)
+#   if (allAges[1] > 0) {
+#     Nx <- c(Nx[1], Nx)
+#     Dx <- c(0, Dx)
+#     km <- c(1, km)
+#     ages <- c(0, allAges[idDx])
+#   } else {
+#     ages <- allAges[idDx]
+#   }
+#   kmTab <- data.frame(Ages = ages, KM = km, Nx = Nx, Dx = Dx)
+#   class(kmTab) <- c("paramDemoKM")
+#   return(kmTab)
+# }
+# 
 # Kaplan-Meier CIs:
-CalcKaplanMeierCIs <- function(ageLast, departType, 
-                               alpha = 0.05, nboot = 1000) {
-  # Number of individuals:
-  n <- length(ageLast)
-  
-  # All ages:
-  allAges <- sort(unique(ageLast))
-  nAllAges <- length(allAges)
-  ageCounts <- rep(0, nAllAges)
-  names(ageCounts) <- allAges
-  
-  # Output matrix:
-  kmboot <- matrix(0, nAllAges, nboot) 
-  
-  # Bootstrap:
-  for (iboot in 0:nboot) {
-    if (iboot == 0) {
-      idboot <- 1:n
-    } else {
-      idboot <- sample(x = 1:n, size = n, replace = TRUE)
-    }
-    ageLastBoot <- ageLast[idboot]
-    departTypeBoot <- departType[idboot]
-    
-    # Ages at death:
-    idDead <- which(departTypeBoot == "D")
-    temptab <- c(table(ageLastBoot[idDead]))
-    tabAgeDeath <- ageCounts
-    tabAgeDeath[names(temptab)] <- temptab
-    idDx <- which(tabAgeDeath > 0)
-    
-    # All ages at censoring:
-    temptab <- c(table(ageLastBoot))
-    tabAgeLast <- ageCounts
-    tabAgeLast[names(temptab)] <- temptab
-    cumtemp <- rev(cumsum(rev(tabAgeLast)))
-    cumLast <- ageCounts
-    cumLast <- cumtemp
-    
-    # Exposures:
-    Nx <- cumLast
-    Dx <- tabAgeDeath
-    km <- cumprod(1 - Dx / Nx)
-    if (iboot == 0) {
-      kmnb <- km
-    } else {
-      kmboot[, iboot] <- km
-    }
-  }
-  
-  # Calculate CIs:
-  kmcii <- t(apply(kmboot, 1, quantile, c(alpha / 2, 1 - alpha / 2),
-                   na.rm = TRUE))
-  colnames(kmcii) <- c("Lower", "Upper")
-  
-  # construct final data frame:
-  kmcidf <- data.frame(Ages = allAges, KM = kmnb, kmcii)
-  kmcilist <- list(KM = kmcidf, settings = c(alpha = alpha, nboot = nboot))
-  class(kmcilist) <- c("paramDemoKMCIs")
-  return(kmcilist)
-}
+# CalcKaplanMeierCIs <- function(ageLast, departType, 
+#                                alpha = 0.05, nboot = 1000) {
+#   # Number of individuals:
+#   n <- length(ageLast)
+#   
+#   # All ages:
+#   allAges <- sort(unique(ageLast))
+#   nAllAges <- length(allAges)
+#   ageCounts <- rep(0, nAllAges)
+#   names(ageCounts) <- allAges
+#   
+#   # Output matrix:
+#   kmboot <- matrix(0, nAllAges, nboot) 
+#   
+#   # Bootstrap:
+#   for (iboot in 0:nboot) {
+#     if (iboot == 0) {
+#       idboot <- 1:n
+#     } else {
+#       idboot <- sample(x = 1:n, size = n, replace = TRUE)
+#     }
+#     ageLastBoot <- ageLast[idboot]
+#     departTypeBoot <- departType[idboot]
+#     
+#     # Ages at death:
+#     idDead <- which(departTypeBoot == "D")
+#     temptab <- c(table(ageLastBoot[idDead]))
+#     tabAgeDeath <- ageCounts
+#     tabAgeDeath[names(temptab)] <- temptab
+#     idDx <- which(tabAgeDeath > 0)
+#     
+#     # All ages at censoring:
+#     temptab <- c(table(ageLastBoot))
+#     tabAgeLast <- ageCounts
+#     tabAgeLast[names(temptab)] <- temptab
+#     cumtemp <- rev(cumsum(rev(tabAgeLast)))
+#     cumLast <- ageCounts
+#     cumLast <- cumtemp
+#     
+#     # Exposures:
+#     Nx <- cumLast
+#     Dx <- tabAgeDeath
+#     km <- cumprod(1 - Dx / Nx)
+#     if (iboot == 0) {
+#       kmnb <- km
+#     } else {
+#       kmboot[, iboot] <- km
+#     }
+#   }
+#   
+#   # Calculate CIs:
+#   kmcii <- t(apply(kmboot, 1, quantile, c(alpha / 2, 1 - alpha / 2),
+#                    na.rm = TRUE))
+#   colnames(kmcii) <- c("Lower", "Upper")
+#   
+#   # construct final data frame:
+#   kmcidf <- data.frame(Ages = allAges, KM = kmnb, kmcii)
+#   kmcilist <- list(KM = kmcidf, settings = c(alpha = alpha, nboot = nboot))
+#   class(kmcilist) <- c("paramDemoKMCIs")
+#   return(kmcilist)
+# }
 
 # Plot Kaplan-Meier:
-plot.paramDemoKM <- function(x, ...) {
-  # Additional arguments:
-  args <- list(...)
-  
-  # Vector of ages:
-  agev <- x$Ages
-  nage <- length(agev)
-  
-  # mar values:
-  if ("mar" %in% names(args)) {
-    mar <- args$mar
-  } else {
-    mar <- c(2, 4, 1, 1)
-  }
-  
-  # Colors:
-  if ("col" %in% names(args)) {
-    col <- args$col
-  } else {
-    col <- "#800026"
-  }
-  
-  # Axis labels:
-  if ("xlab" %in% names(args)) {
-    xlab <- args$xlab
-  } else {
-    xlab <- expression(paste("Age, ", italic(x)))
-  }
-  if ("ylab" %in% names(args)) {
-    ylab <- args$ylab
-  } else {
-    ylab <- "Kaplan-Meier"
-  }
-  
-  # Type of line:
-  if ("type" %in% names(args)) {
-    type <- args$type
-  } else {
-    type <- "l"
-  }
-  
-  # Color
-  if ("col" %in% names(args)) {
-    col <- args$col
-  } else {
-    col <- "#800026"
-  }
-  
-  # Line width:
-  if ("lwd" %in% names(args)) {
-    lwd <- args$lwd
-  } else {
-    lwd <- 1
-  }
-  
-  # Cex.lab:
-  if ("cex.lab" %in% names(args)) {
-    cex.lab <- args$cex.lab
-  } else {
-    cex.lab <- 1
-  }
-  
-  # Cex.axis:
-  if ("cex.axis" %in% names(args)) {
-    cex.axis <- args$cex.axis
-  } else {
-    cex.axis <- 1
-  }
-  
-  if ("xlim" %in% names(args)) {
-    xlim <- args$xlim
-  } else {
-    xlim <- range(agev) * c(0, 1.1)
-  }
-  if ("ylim" %in% names(args)) {
-    ylim <- args$ylim
-  } else {
-    ylim <- c(0, 1)
-  }
-  
-  # Produce plots:
-  op <- par(no.readonly = TRUE)
-  
-  par(mar = c(4, 4, 1, 1), mfrow = c(1, 1))
-  plot(xlim, ylim, col = NA, axes = FALSE, xlab = "", ylab = "")
-  
-  lines(agev, x$KM, type = type, col = col, lwd = lwd)
-  Axis(xlim, side = 1, pos = ylim[1], cex.axis = cex.axis)
-  Axis(ylim, side = 2, pos = xlim[1], las = 2, cex.axis = cex.axis)
-  mtext(ylab, side = 2, line = mar[2] / 2, cex = cex.lab)
-  mtext(xlab, side = 1, line = 2, cex = cex.lab)
-  par(op)
-}
+# plot.paramDemoKM <- function(x, ...) {
+#   # Additional arguments:
+#   args <- list(...)
+#   
+#   # Vector of ages:
+#   agev <- x$Ages
+#   nage <- length(agev)
+#   
+#   # mar values:
+#   if ("mar" %in% names(args)) {
+#     mar <- args$mar
+#   } else {
+#     mar <- c(2, 4, 1, 1)
+#   }
+#   
+#   # Colors:
+#   if ("col" %in% names(args)) {
+#     col <- args$col
+#   } else {
+#     col <- "#800026"
+#   }
+#   
+#   # Axis labels:
+#   if ("xlab" %in% names(args)) {
+#     xlab <- args$xlab
+#   } else {
+#     xlab <- expression(paste("Age, ", italic(x)))
+#   }
+#   if ("ylab" %in% names(args)) {
+#     ylab <- args$ylab
+#   } else {
+#     ylab <- "Kaplan-Meier"
+#   }
+#   
+#   # Type of line:
+#   if ("type" %in% names(args)) {
+#     type <- args$type
+#   } else {
+#     type <- "l"
+#   }
+#   
+#   # Color
+#   if ("col" %in% names(args)) {
+#     col <- args$col
+#   } else {
+#     col <- "#800026"
+#   }
+#   
+#   # Line width:
+#   if ("lwd" %in% names(args)) {
+#     lwd <- args$lwd
+#   } else {
+#     lwd <- 1
+#   }
+#   
+#   # Cex.lab:
+#   if ("cex.lab" %in% names(args)) {
+#     cex.lab <- args$cex.lab
+#   } else {
+#     cex.lab <- 1
+#   }
+#   
+#   # Cex.axis:
+#   if ("cex.axis" %in% names(args)) {
+#     cex.axis <- args$cex.axis
+#   } else {
+#     cex.axis <- 1
+#   }
+#   
+#   if ("xlim" %in% names(args)) {
+#     xlim <- args$xlim
+#   } else {
+#     xlim <- range(agev) * c(0, 1.1)
+#   }
+#   if ("ylim" %in% names(args)) {
+#     ylim <- args$ylim
+#   } else {
+#     ylim <- c(0, 1)
+#   }
+#   
+#   # Produce plots:
+#   op <- par(no.readonly = TRUE)
+#   
+#   par(mar = c(4, 4, 1, 1), mfrow = c(1, 1))
+#   plot(xlim, ylim, col = NA, axes = FALSE, xlab = "", ylab = "")
+#   
+#   lines(agev, x$KM, type = type, col = col, lwd = lwd)
+#   Axis(xlim, side = 1, pos = ylim[1], cex.axis = cex.axis)
+#   Axis(ylim, side = 2, pos = xlim[1], las = 2, cex.axis = cex.axis)
+#   mtext(ylab, side = 2, line = mar[2] / 2, cex = cex.lab)
+#   mtext(xlab, side = 1, line = 2, cex = cex.lab)
+#   par(op)
+# }
 
 # Plot Kaplan-Meier CIs:
-plot.paramDemoKMCIs <- function(x, ...) {
-  # Additional arguments:
-  args <- list(...)
-  
-  # KM:
-  KM <- x$KM
-  # Vector of ages:
-  agev <- KM$Ages
-  nage <- length(agev)
-  
-  # mar values:
-  if ("mar" %in% names(args)) {
-    mar <- args$mar
-  } else {
-    mar <- c(2, 4, 1, 1)
-  }
-  
-  # Colors:
-  if ("col" %in% names(args)) {
-    if (length(args$col) < 2) {
-      cols <- c(mean = "#800026", cis = "#FC4E2A")
-    } else {
-      cols <- args$col[1:2]
-      names(cols) <- c("mean", "cis")
-    }
-  } else {
-    cols <- c(mean = "#800026", cis = "#FC4E2A")
-  }
-  
-  # Axis labels:
-  if ("xlab" %in% names(args)) {
-    xlab <- args$xlab
-  } else {
-    xlab <- expression(paste("Age, ", italic(x)))
-  }
-  if ("ylab" %in% names(args)) {
-    ylab <- args$ylab
-  } else {
-    ylab <- "Kaplan-Meier"
-  }
-  
-  # Type of line:
-  if ("type" %in% names(args)) {
-    type <- args$type
-  } else {
-    type <- "l"
-  }
-  
-  # Color
-  if ("col" %in% names(args)) {
-    col <- args$col
-  } else {
-    col <- "#800026"
-  }
-  
-  # Line width:
-  if ("lwd" %in% names(args)) {
-    lwd <- args$lwd
-  } else {
-    lwd <- 1
-  }
-  
-  # Cex.lab:
-  if ("cex.lab" %in% names(args)) {
-    cex.lab <- args$cex.lab
-  } else {
-    cex.lab <- 1
-  }
-  
-  # Cex.axis:
-  if ("cex.axis" %in% names(args)) {
-    cex.axis <- args$cex.axis
-  } else {
-    cex.axis <- 1
-  }
-  
-  if ("xlim" %in% names(args)) {
-    xlim <- args$xlim
-  } else {
-    xlim <- range(agev) * c(0, 1.1)
-  }
-  if ("ylim" %in% names(args)) {
-    ylim <- args$ylim
-  } else {
-    ylim <- c(0, 1)
-  }
-  
-  # Produce plots:
-  op <- par(no.readonly = TRUE)
-  
-  par(mar = c(4, 4, 1, 1), mfrow = c(1, 1))
-  plot(xlim, ylim, col = NA, axes = FALSE, xlab = "", ylab = "")
-  
-  polygon(c(agev, rev(agev)), c(KM$Lower, rev(KM$Upper)), col = cols["cis"], 
-          border = NA)
-  lines(agev, KM$KM, type = type, col = cols["mean"], lwd = lwd)
-  Axis(xlim, side = 1, pos = ylim[1], cex.axis = cex.axis)
-  Axis(ylim, side = 2, pos = xlim[1], las = 2, cex.axis = cex.axis)
-  mtext(ylab, side = 2, line = mar[2] / 2, cex = cex.lab)
-  mtext(xlab, side = 1, line = 2, cex = cex.lab)
-  par(op)
-}
+# plot.paramDemoKMCIs <- function(x, ...) {
+#   # Additional arguments:
+#   args <- list(...)
+#   
+#   # KM:
+#   KM <- x$KM
+#   # Vector of ages:
+#   agev <- KM$Ages
+#   nage <- length(agev)
+#   
+#   # mar values:
+#   if ("mar" %in% names(args)) {
+#     mar <- args$mar
+#   } else {
+#     mar <- c(2, 4, 1, 1)
+#   }
+#   
+#   # Colors:
+#   if ("col" %in% names(args)) {
+#     if (length(args$col) < 2) {
+#       cols <- c(mean = "#800026", cis = "#FC4E2A")
+#     } else {
+#       cols <- args$col[1:2]
+#       names(cols) <- c("mean", "cis")
+#     }
+#   } else {
+#     cols <- c(mean = "#800026", cis = "#FC4E2A")
+#   }
+#   
+#   # Axis labels:
+#   if ("xlab" %in% names(args)) {
+#     xlab <- args$xlab
+#   } else {
+#     xlab <- expression(paste("Age, ", italic(x)))
+#   }
+#   if ("ylab" %in% names(args)) {
+#     ylab <- args$ylab
+#   } else {
+#     ylab <- "Kaplan-Meier"
+#   }
+#   
+#   # Type of line:
+#   if ("type" %in% names(args)) {
+#     type <- args$type
+#   } else {
+#     type <- "l"
+#   }
+#   
+#   # Color
+#   if ("col" %in% names(args)) {
+#     col <- args$col
+#   } else {
+#     col <- "#800026"
+#   }
+#   
+#   # Line width:
+#   if ("lwd" %in% names(args)) {
+#     lwd <- args$lwd
+#   } else {
+#     lwd <- 1
+#   }
+#   
+#   # Cex.lab:
+#   if ("cex.lab" %in% names(args)) {
+#     cex.lab <- args$cex.lab
+#   } else {
+#     cex.lab <- 1
+#   }
+#   
+#   # Cex.axis:
+#   if ("cex.axis" %in% names(args)) {
+#     cex.axis <- args$cex.axis
+#   } else {
+#     cex.axis <- 1
+#   }
+#   
+#   if ("xlim" %in% names(args)) {
+#     xlim <- args$xlim
+#   } else {
+#     xlim <- range(agev) * c(0, 1.1)
+#   }
+#   if ("ylim" %in% names(args)) {
+#     ylim <- args$ylim
+#   } else {
+#     ylim <- c(0, 1)
+#   }
+#   
+#   # Produce plots:
+#   op <- par(no.readonly = TRUE)
+#   
+#   par(mar = c(4, 4, 1, 1), mfrow = c(1, 1))
+#   plot(xlim, ylim, col = NA, axes = FALSE, xlab = "", ylab = "")
+#   
+#   polygon(c(agev, rev(agev)), c(KM$Lower, rev(KM$Upper)), col = cols["cis"], 
+#           border = NA)
+#   lines(agev, KM$KM, type = type, col = cols["mean"], lwd = lwd)
+#   Axis(xlim, side = 1, pos = ylim[1], cex.axis = cex.axis)
+#   Axis(ylim, side = 2, pos = xlim[1], las = 2, cex.axis = cex.axis)
+#   mtext(ylab, side = 2, line = mar[2] / 2, cex = cex.lab)
+#   mtext(xlab, side = 1, line = 2, cex = cex.lab)
+#   par(op)
+# }
 
 # ------------------------ #
 # PRODUCT-LIMIT ESTIMATOR: 
