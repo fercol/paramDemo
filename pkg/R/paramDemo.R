@@ -2462,7 +2462,7 @@ CalcProductLimitEst <- function(ageLast, ageFirst = NULL, departType) {
     idtemp[idEqAt] <- 1
     ttemp <- table(allAges, idtemp)
     temp <- c(ttemp[, 2])
-    recTab[, at] <- temp
+    recTab[rownames(ttemp), at] <- temp
   }
   
   # Cumulative tables:
@@ -2531,7 +2531,7 @@ CalcProductLimitEstCIs <- function(ageFirst, ageLast, departType, nboot = 1000,
     idtemp[which(allAgesId == at)] <- 1
     ttemp <- table(allAges, idtemp)
     temp <- c(ttemp[, 2])
-    recTab[, at] <- temp
+    recTab[rownames(ttemp), at] <- temp
   }
   
   # Cumulative tables:
@@ -2589,7 +2589,7 @@ CalcProductLimitEstCIs <- function(ageFirst, ageLast, departType, nboot = 1000,
       idtemp[which(allAgesIdb == at)] <- 1
       ttemp <- table(allAgesb, idtemp)
       temp <- c(ttemp[, 2])
-      recTab[, at] <- temp
+      recTab[rownames(ttemp), at] <- temp
     }
     
     # Cumulative tables:
