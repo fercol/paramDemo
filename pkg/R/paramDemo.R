@@ -2444,6 +2444,8 @@ CalcProductLimitEst <- function(ageLast, ageFirst = NULL, departType) {
     allAgesId <- c(rep("F", length(idAgeFirst)), departType)
   }
   
+  allAgeTypes <- c("D", "C", "F")
+  NallTypes <- length(allAgeTypes)
   ageTypes <- unique(allAgesId)
   ntypes <- length(ageTypes)
   idsort <- sort.int(allAges, index.return = TRUE)$ix
@@ -2455,7 +2457,7 @@ CalcProductLimitEst <- function(ageLast, ageFirst = NULL, departType) {
   ageNames <- as.character(unAllAges)
   
   # Count by type:
-  recTab <- matrix(0, nages, ntypes, dimnames = list(ageNames, ageTypes))
+  recTab <- matrix(0, nages, NallTypes, dimnames = list(ageNames, allAgeTypes))
   for (at in ageTypes) {
     idtemp <- rep(0, nAllAges)
     idEqAt <- which(allAgesId == at)
@@ -2466,9 +2468,10 @@ CalcProductLimitEst <- function(ageLast, ageFirst = NULL, departType) {
   }
   
   # Cumulative tables:
-  cumTab <- apply(recTab, 2, function(xx) {
-    rev(cumsum(rev(xx)))
-  })
+  cumTab <- recTab * 0
+  for (at in ageTypes) {
+    cumTab[, at] <- rev(cumsum(rev(recTab[, at])))
+  }
   
   Nx <- cumTab[, "D"] + cumTab[, "C"] - cumTab[, "F"]
   Dx <- recTab[, "D"]
@@ -2514,6 +2517,8 @@ CalcProductLimitEstCIs <- function(ageFirst, ageLast, departType, nboot = 1000,
     allAgesId <- c(rep("F", length(idAgeFirst)), departType)
   }
   
+  allAgeTypes <- c("D", "C", "F")
+  NallTypes <- length(allAgeTypes)
   ageTypes <- unique(allAgesId)
   ntypes <- length(ageTypes)
   idsort <- sort.int(allAges, index.return = TRUE)$ix
@@ -2525,19 +2530,21 @@ CalcProductLimitEstCIs <- function(ageFirst, ageLast, departType, nboot = 1000,
   ageNames <- as.character(unAllAges)
   
   # Count by type:
-  recTab <- matrix(0, nages, ntypes, dimnames = list(ageNames, ageTypes))
+  recTab <- matrix(0, nages, NallTypes, dimnames = list(ageNames, allAgeTypes))
   for (at in ageTypes) {
     idtemp <- rep(0, nAllAges)
-    idtemp[which(allAgesId == at)] <- 1
+    idEqAt <- which(allAgesId == at)
+    idtemp[idEqAt] <- 1
     ttemp <- table(allAges, idtemp)
     temp <- c(ttemp[, 2])
     recTab[rownames(ttemp), at] <- temp
   }
   
   # Cumulative tables:
-  cumTab <- apply(recTab, 2, function(xx) {
-    rev(cumsum(rev(xx)))
-  })
+  cumTab <- recTab * 0
+  for (at in ageTypes) {
+    cumTab[, at] <- rev(cumsum(rev(recTab[, at])))
+  }
   
   Nx <- cumTab[, "D"] + cumTab[, "C"] - cumTab[, "F"]
   Dx <- recTab[, "D"]
@@ -2583,19 +2590,22 @@ CalcProductLimitEstCIs <- function(ageFirst, ageLast, departType, nboot = 1000,
     #                                 format(1:nages, scientific = F)))
     
     # Count by type:
-    recTab <- matrix(0, nages, ntypesb, dimnames = list(ageNames, ageTypesb))
+    recTab <- matrix(0, nages, NallTypes, 
+                     dimnames = list(ageNames, allAgeTypes))
     for (at in ageTypes) {
-      idtemp <- rep(0, nAllAgesb)
-      idtemp[which(allAgesIdb == at)] <- 1
-      ttemp <- table(allAgesb, idtemp)
+      idtemp <- rep(0, nAllAges)
+      idEqAt <- which(allAgesId == at)
+      idtemp[idEqAt] <- 1
+      ttemp <- table(allAges, idtemp)
       temp <- c(ttemp[, 2])
       recTab[rownames(ttemp), at] <- temp
     }
     
     # Cumulative tables:
-    cumTab <- apply(recTab, 2, function(xx) {
-      rev(cumsum(rev(xx)))
-    })
+    cumTab <- recTab * 0
+    for (at in ageTypes) {
+      cumTab[, at] <- rev(cumsum(rev(recTab[, at])))
+    }
     
     Nx <- cumTab[, "D"] + cumTab[, "C"] - cumTab[, "F"]
     Dx <- recTab[, "D"]
