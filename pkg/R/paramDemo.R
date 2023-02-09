@@ -452,7 +452,7 @@
     fertfun <- function(beta, x) {
       be1 <- x * 0 + beta["b1a"]
       be1[which(x > beta["b2"])] <- beta["b1b"]
-      fert <- beta["b0"] * exp(-((x - beta["b2"]) / bet1)^2)
+      fert <- beta["b0"] * exp(-((x - beta["b2"]) / be1)^2)
       return(fert)
     }
   } else if (modelFert == "ColcheroMuller") {
@@ -495,7 +495,7 @@
     fertfun <- function(beta, x) {
       be1 <- x * 0 + beta[, "b1a"]
       be1[which(x > beta[, "b2"])] <- beta[, "b1b"]
-      fert <- beta[, "b0"] * exp(-((x - beta[, "b2"]) / bet1)^2)
+      fert <- beta[, "b0"] * exp(-((x - beta[, "b2"]) / be1)^2)
       return(fert)
     }
   } else if (modelFert == "ColcheroMuller") {
