@@ -1,11 +1,14 @@
 #Exports:
-export("CalcAgeingRate", "CalcAgeMaxFert", "CalcAveDemo", "CalcDemo", "CalcFert", "CalcLifeTable", "CalcLifeTableCIs", "CalcMort", "CalcRemainLifeExp", "CalcSurv", "CalcSurvProbs", "plot.paramDemoLT", "plot.paramDemoLTCIs", "plot.paramDemo", "SampleRandAge", "CalcKaplanMeier", "CalcKaplanMeierCIs", "plot.paramDemoKM", plot.paramDemoKMCIs, "CalcProductLimitEst", "CalcProductLimitEstCIs", "plot.paramDemoPLE", "plot.paramDemoPLECIs", "SimulateStudy")
+export("CalcAgeingRate", "CalcAgeMaxFert", "CalcAveDemo", "CalcDemo", 
+       "CalcFert", "CalcLifeTable", "CalcLifeTableCIs", "CalcMort", 
+       "CalcRemainLifeExp", "CalcSurv", "CalcSurvProbs", "plot.paramDemoLT", 
+       "plot.paramDemoLTCIs", "plot.paramDemo", "SampleRandAge", 
+       "CalcProductLimitEst", "CalcProductLimitEstCIs", 
+       "plot.paramDemoPLE", "plot.paramDemoPLECIs", "SimulateStudy")
 
 #S3 methods:
 S3method("plot", "paramDemoLT")
 S3method("plot", "paramDemoLTCIs")
 S3method("plot", "paramDemo")
-S3method("plot", "paramDemoKM")
-S3method("plot", "paramDemoKMCIs")
 S3method("plot", "paramDemoPLE")
 S3method("plot", "paramDemoPLECIs")
