@@ -122,11 +122,8 @@
   return(defaultTheta)
 }
 
-# Fertility:
-.SetBeta <- function(beta, modelFert = "quadratic") {
-  if (is.null(beta)) {
-    stop("Missing 'beta' parameter vector or matrix.\n", call. = FALSE)
-  } 
+# Define beta:
+.DefineBeta <- function(modelFert = "quadratic") {
   if (modelFert == "quadratic") {
     nBe <- 3
     lowBe <- rep(0, 3)
@@ -165,14 +162,25 @@
     uppBe <- c(1, rep(Inf, 4))
   } else if (modelFert == "skewSymmetric") {
     nBe <- 5
-    lowBe <- c(-Inf, rep(0, 4))
+    lowBe <- c(rep(0, 4), -Inf)
     uppBe <- rep(Inf, 5)
   } else if (modelFert == "skewLogistic") {
     nBe <- 5
-    lowBe <- c(-Inf, rep(0, 4))
+    lowBe <- c(rep(0, 4), -Inf)
     uppBe <- rep(Inf, 5)
   }
   nameBe <- sprintf("b%s", 1:nBe - 1)
+  defaultBeta  <- list(p = nBe, name = nameBe, low = lowBe, upp = uppBe)
+  return(defaultBeta)
+}
+
+# Fertility:
+.SetBeta <- function(beta, modelFert = "quadratic") {
+  if (is.null(beta)) {
+    stop("Missing 'beta' parameter vector or matrix.\n", call. = FALSE)
+  } 
+  defBeta <- .DefineBeta(modelFert = modelFert)
+  
   if (is.matrix(beta)) {
     nbeUser <- ncol(beta)
     clBe <- "matrix"
@@ -185,47 +193,47 @@
     stop("The beta parameters should either be of class matrix", 
          " or a numeric vector.\n", call. = FALSE)
   }
-  if (nbeUser != nBe) {
-    stop(sprintf("The beta %s should have %s %s.\n", clBe, nBe, stBe),
+  if (nbeUser != defBeta$p) {
+    stop(sprintf("The beta %s should have %s %s.\n", clBe, defBeta$p, stBe),
          call. = FALSE)
   } else {
     if (is.matrix(beta)) {
-      colnames(beta) <- nameBe
+      colnames(beta) <- defBeta$name
     } else {
-      names(beta) <- nameBe
+      names(beta) <- defBeta$name
     }
   }
   # check if beta parameters conform to their support:
   if (is.matrix(beta)) {
-    BETLOW <- all(sapply(1:nBe, function(bi) {
-      bl <- all(beta[, bi] >= lowBe[bi])
+    BETLOW <- all(sapply(1:defBeta$p, function(bi) {
+      bl <- all(beta[, bi] >= defBeta$low[bi])
     }))
   } else {
-    BETLOW <- all(beta >= lowBe)
+    BETLOW <- all(beta >= defBeta$low)
   }
   if (is.matrix(beta)) {
     BETUPP <- all(sapply(1:nBe, function(bi) {
-      bl <- all(beta[, bi] <= uppBe[bi])
+      bl <- all(beta[, bi] <= defBeta$upp[bi])
     }))
   } else {
-    BETUPP <- all(beta <= uppBe)
+    BETUPP <- all(beta <= defBeta$upp)
   }
   if(!BETLOW) {
     stop(sprintf("Some beta parameters are below their lower bound.\n %s.\n",
-                 paste(sprintf("min(%s) = %s", nameBe, lowBe), 
+                 paste(sprintf("min(%s) = %s", defBeta$name, defBeta$low), 
                        collapse = ", ")),
          call. = FALSE)
     
   }
   if(!BETUPP) {
     stop(sprintf("Some beta parameters are above their upper bound.\n %s.\n",
-                 paste(sprintf("min(%s) = %s", nameBe, uppBe), 
+                 paste(sprintf("min(%s) = %s", defBeta$name, defBeta$low), 
                        collapse = ", ")),
          call. = FALSE)
     
   }
-  defaultBeta  <- list(beta = beta, p = nBe, name = nameBe,
-                       low = lowBe, upp = uppBe)
+  defaultBeta  <- list(beta = beta, p = defBeta$p, name = defBeta$name,
+                       low = defBeta$low, upp = defBeta$upp)
   attr(defaultBeta, "model") = modelFert
   return(defaultBeta)
 }
@@ -555,7 +563,6 @@
                 beta["b4"] * ((x - beta["b2"]) / beta["b1"])^3)
       return(fert)
     }
-    
   } else if (modelFert == "skewLogistic") {
     fertfun <- function(beta, x) {
       fert <- beta["b0"] * 2 * 1 / beta["b1"] * 
