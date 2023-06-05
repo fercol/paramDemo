@@ -2,7 +2,7 @@
 # PACKAGE: paramDemo
 # AUTHOR: Fernando Colchero
 # DATE CREATED: 2020-06-01
-# DATE MODIFIED: 2022-02-11
+# DATE MODIFIED: 2023-02-09
 # DESCRIPTION: Functions to extract demographic information from parametric
 #              mortality and Fertility models, summary statistics (e.g.
 #              ageing rates, life expectancy, lifespan equality, etc.), 
@@ -38,7 +38,8 @@
 # Verify fertility model:
 .VerifyFertMod <- function(modelFert) {
   fMods <- c("quadratic", "PeristeraKostaki", "ColcheroMuller", 
-             "Hadwiger", "gamma", "beta")
+             "Hadwiger", "gamma", "beta", "skewNormal", 'gammaMixture',
+             "HadwigerMixture", "skewSymmetric", "skewLogistic")
   if (!modelFert %in% fMods) {
     stop("Wrong 'modelFert' specification. See help file for fertility models.",
          call. = FALSE)
@@ -128,22 +129,48 @@
   } 
   if (modelFert == "quadratic") {
     nBe <- 3
-    lowBe <- c(0, 0, 0)
+    lowBe <- rep(0, 3)
+    uppBe <- rep(Inf, 3)
   } else if (modelFert == "PeristeraKostaki") {
     nBe <- 4
     lowBe <- c(0, 0, 0, 0)
+    uppBe <- rep(Inf, 4)
   } else if (modelFert == "ColcheroMuller") {
     nBe <- 4
     lowBe <- c(0, 0, 0, -Inf)
+    uppBe <- rep(Inf, 4)
   } else if (modelFert == "Hadwiger") {
     nBe <- 3
     lowBe <- c(0, 0, 0)
+    uppBe <- rep(Inf, 3)
   } else if (modelFert == "gamma") {
     nBe <- 3
     lowBe <- c(0, 0, 0)
+    uppBe <- rep(Inf, 3)
   } else if (modelFert == "beta") {
     nBe <- 5
     lowBe <- rep(0, 5)
+    uppBe <- rep(Inf, 5)
+  } else if (modelFert == "skewNormal") {
+    nBe <- 4
+    lowBe <- rep(0, 4)
+    uppBe <- rep(Inf, 4)
+  } else if (modelFert == "gammaMixture") {
+    nBe <- 6
+    lowBe <- rep(0, 6)
+    uppBe <- c(Inf, 1, rep(Inf, 4))
+  } else if (modelFert == "HadwigerMixture") {
+    nBe <- 5
+    lowBe <- rep(0, 5)
+    uppBe <- c(1, rep(Inf, 4))
+  } else if (modelFert == "skewSymmetric") {
+    nBe <- 5
+    lowBe <- c(-Inf, rep(0, 4))
+    uppBe <- rep(Inf, 5)
+  } else if (modelFert == "skewLogistic") {
+    nBe <- 5
+    lowBe <- c(-Inf, rep(0, 4))
+    uppBe <- rep(Inf, 5)
   }
   nameBe <- sprintf("b%s", 1:nBe - 1)
   if (is.matrix(beta)) {
@@ -176,6 +203,13 @@
   } else {
     BETLOW <- all(beta >= lowBe)
   }
+  if (is.matrix(beta)) {
+    BETUPP <- all(sapply(1:nBe, function(bi) {
+      bl <- all(beta[, bi] <= uppBe[bi])
+    }))
+  } else {
+    BETUPP <- all(beta <= uppBe)
+  }
   if(!BETLOW) {
     stop(sprintf("Some beta parameters are below their lower bound.\n %s.\n",
                  paste(sprintf("min(%s) = %s", nameBe, lowBe), 
@@ -183,8 +217,15 @@
          call. = FALSE)
     
   }
+  if(!BETUPP) {
+    stop(sprintf("Some beta parameters are above their upper bound.\n %s.\n",
+                 paste(sprintf("min(%s) = %s", nameBe, uppBe), 
+                       collapse = ", ")),
+         call. = FALSE)
+    
+  }
   defaultBeta  <- list(beta = beta, p = nBe, name = nameBe,
-                       low = lowBe)
+                       low = lowBe, upp = uppBe)
   attr(defaultBeta, "model") = modelFert
   return(defaultBeta)
 }
@@ -481,6 +522,49 @@
            beta(beta["b1"], beta["b2"]))
       return(fert)
     }
+  } else if (modelFert == "skewNormal") {
+    fertfun <- function(beta, x) {
+      fert <- beta["b0"] * 2 * 1/beta["b1"] * 
+        dnorm((x - beta["b2"]) / beta["b1"]) * 
+        pnorm(beta["b3"] * ((x - beta["b2"]) / beta["b1"]))
+      return(fert)
+    }
+  } else if (modelFert == "gammaMixture") {
+    fertfun <- function(beta, x) {
+      fert <- beta["b0"] * (beta["b1"] * 
+        dgamma(x, shape = beta["b2"], rate = beta["b3"]) +
+      (1 - beta["b1"]) * dgamma(x, shape = beta["b4"], rate = beta["b5"]))
+      return(fert)
+    }
+  } else if (modelFert == "HadwigerMixture") {
+    fertfun <- function(beta, x) {
+      fert <- beta["b0"] * (beta["b1"]/beta["b2"] * 
+        (beta["b2"]/x)^(3/2) * exp(-beta["b1"]^2 * (beta["b2"] / x + 
+                                                      x / beta["b2"] - 2))) +
+        (1 - beta["b0"]) * (beta["b3"]/beta["b4"] * 
+                              (beta["b4"]/x)^(3/2) * 
+                              exp(-beta["b3"]^2 * (beta["b4"] / x + 
+                                                     x / beta["b4"] - 2)))
+      return(fert)
+    }
+  } else if (modelFert == "skewSymmetric") {
+    fertfun <- function(beta, x) {
+      fert <- beta["b0"] * 2 * 1/beta["b1"] * 
+        dnorm((x - beta["b2"]) / beta["b1"]) * 
+        pnorm(beta["b3"] * ((x - beta["b2"]) / beta["b1"]) + 
+                beta["b4"] * ((x - beta["b2"]) / beta["b1"])^3)
+      return(fert)
+    }
+    
+  } else if (modelFert == "skewLogistic") {
+    fertfun <- function(beta, x) {
+      fert <- beta["b0"] * 2 * 1 / beta["b1"] * 
+        ((exp(-(x - beta["b2"]) / beta["b1"])) / 
+           ((1 + exp(-(x - beta["b2"]) / beta["b1"])^2) *
+              (1 + exp(-beta["b3"] * (x - beta["b2"]) / beta["b1"] - 
+                         beta["b4"] * ((x - beta["b2"]) / beta["b1"])^3))))
+      return(fert)
+    }
   }
   return(fertfun)
 }
@@ -526,6 +610,56 @@
            beta(beta[, "b1"], beta[, "b2"]))
       return(fert)
     }
+  } else if (modelFert == "skewNormal") {
+    fertfun <- function(beta, x) {
+      fert <- beta[, "b0"] * 2 * 1/beta[, "b1"] * 
+        dnorm((x - beta[, "b2"]) / beta[, "b1"]) * 
+        pnorm(beta[, "b3"] * ((x - beta[, "b2"]) / beta[, "b1"]))
+      return(fert)
+    }
+  } else if (modelFert == "gammaMixture") {
+    fertfun <- function(beta, x) {
+      fert <- beta[, "b0"] * (beta[, "b1"] * 
+                                dgamma(x, shape = beta[, "b2"], 
+                                       rate = beta[, "b3"]) +
+                                (1 - beta[, "b1"]) * 
+                                dgamma(x, shape = beta[, "b4"], 
+                                       rate = beta[, "b5"]))
+      return(fert)
+    }
+  } else if (modelFert == "HadwigerMixture") {
+    fertfun <- function(beta, x) {
+      fert <- beta[, "b0"] * (beta[, "b1"]/beta[, "b2"] * 
+                                (beta[, "b2"]/x)^(3/2) * 
+                                exp(-beta[, "b1"]^2 * 
+                                      (beta[, "b2"] / x + 
+                                         x / beta[, "b2"] - 2))) +
+        (1 - beta[, "b0"]) * (beta[, "b3"]/beta[, "b4"] * 
+                                (beta[, "b4"]/x)^(3/2) * 
+                                exp(-beta[, "b3"]^2 * (beta[, "b4"] / x + 
+                                                         x / beta[, "b4"] - 2)))
+      return(fert)
+    }
+  } else if (modelFert == "skewSymmetric") {
+    fertfun <- function(beta, x) {
+      fert <- beta[, "b0"] * 2 * 1/beta[, "b1"] * 
+        dnorm((x - beta[, "b2"]) / beta[, "b1"]) * 
+        pnorm(beta[, "b3"] * ((x - beta[, "b2"]) / beta[, "b1"]) + 
+                beta[, "b4"] * ((x - beta[, "b2"]) / beta[, "b1"])^3)
+      return(fert)
+    }
+    
+  } else if (modelFert == "skewLogistic") {
+    fertfun <- function(beta, x) {
+      fert <- beta[, "b0"] * 2 * 1 / beta[, "b1"] * 
+        ((exp(-(x - beta[, "b2"]) / beta[, "b1"])) / 
+           ((1 + exp(-(x - beta[, "b2"]) / beta[, "b1"])^2) *
+              (1 + exp(-beta[, "b3"] * (x - beta[, "b2"]) / beta[, "b1"] - 
+                         beta[, "b4"] * ((x - beta[, "b2"]) / 
+                                           beta[, "b1"])^3))))
+      return(fert)
+    }
+    
   }
   return(fertfun)
 }
