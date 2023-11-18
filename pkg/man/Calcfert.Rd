@@ -82,7 +82,7 @@ Peristera, P. & Kostaki, A. (2007) Modeling fertility in modern populations. \em
 fert <- CalcFert(beta = c(b0 = 0.5, b1 = 0.01, b2 = 10), x = 10)
 
 # Age specific fertility based on gamma model:
-fert <- CalcFert(theta = c(b0 = 13, b1 = 2, b2 = 0.15), x = 10,
+fert <- CalcFert(beta = c(b0 = 13, b1 = 2, b2 = 0.15), x = 10,
                   modelFert = "gamma")
 }
 

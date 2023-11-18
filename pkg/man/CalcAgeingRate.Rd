@@ -1,16 +1,16 @@
-\name{CalcAgeingRate}
-\alias{CalcAgeingRate}
+\name{CalcAgeingRateMort}
+\alias{CalcAgeingRateMort}
 
 \title{
  Calculating actuarial aging rates.
 }
 
 \description{
- \code{CalcAgeingRate} is used to calculate actuarial ageing rates from parametric models of mortality.
+ \code{CalcAgeingRateMort} is used to calculate actuarial ageing rates from parametric models of mortality.
 }
 
-\usage{CalcAgeingRate (theta, x, model = "GO", shape = "simple", 
-                checkTheta = TRUE)}
+\usage{CalcAgeingRateMort(theta, x, model = "GO", shape = "simple", 
+                   checkTheta = TRUE)}
 
 \arguments{
 	\item{theta }{Numerical vector of age-specific mortality parameters (see details).}
@@ -26,7 +26,7 @@
 }
 
 \details{
-The function \code{CalcAgeingRate} uses parametric functions to calculate the actuarial (i.e., survival) rate of ageing. The function follows the conventions from package BaSTA (Colchero and Clark 2012, Colchero \emph{et al.} 2012, Colchero \emph{et al.} 2021) to select the parametric model of mortality. The mortality function describes how the risk of mortality changes with age, and is defined as 
+The function \code{CalcAgeingRateMort} uses parametric functions to calculate the actuarial (i.e., survival) rate of ageing. The function follows the conventions from package BaSTA (Colchero and Clark 2012, Colchero \emph{et al.} 2012, Colchero \emph{et al.} 2021) to select the parametric model of mortality. The mortality function describes how the risk of mortality changes with age, and is defined as 
 \deqn{
 \mu(x | \theta) = \lim_{\Delta x \rightarrow 0} \frac{\Pr[x < X < x + \Delta x | X > x]}{\Delta x},
 }
@@ -53,12 +53,12 @@ for \eqn{i = 1, 2, \dots, n}.
 
 \examples{
 # Calculate ageing rate from Gompertz model:
-ar <- CalcAgeingRate(theta = c(b0 = -5, b1 = 0.1), x = 10)
+arm <- CalcAgeingRateMor(theta = c(b0 = -5, b1 = 0.1), x = 10)
 
 # Calculate ageing rate from Siler model:
-ar <- CalcAgeingRate(theta = c(a0 = -1, a1 = 1, c = 0.0001, 
-                          b0 = -6, b1 = 0.15), x = 10,
-                     model = "GO", shape = "bathtub")
+arm <- CalcAgeingRateMort(theta = c(a0 = -1, a1 = 1, c = 0.0001, 
+                                    b0 = -6, b1 = 0.15), x = 10,
+                          model = "GO", shape = "bathtub")
 
 }
 
