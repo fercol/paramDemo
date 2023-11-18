@@ -1,10 +1,13 @@
 #Exports:
-export("CalcAgeingRate", "CalcAgeMaxFert", "CalcAveDemo", "CalcDemo", 
+export("CalcAgeingRateMort", "CalcAgeMaxFert", "CalcAveDemo", "CalcDemo", 
        "CalcFert", "CalcLifeTable", "CalcLifeTableCIs", "CalcMort", 
        "CalcRemainLifeExp", "CalcSurv", "CalcSurvProbs", "plot.paramDemoLT", 
        "plot.paramDemoLTCIs", "plot.paramDemo", "SampleRandAge", 
        "CalcProductLimitEst", "CalcProductLimitEstCIs", 
-       "plot.paramDemoPLE", "plot.paramDemoPLECIs", "SimulateStudy")
+       "plot.paramDemoPLE", "plot.paramDemoPLECIs", "SimulateStudy",
+       ".DefineMortMatrix", ".DefineMortNumeric", ".DefineCumHazMatrix",
+       ".DefineCumHazNumeric", ".DefineFertilityMatrix", 
+       ".DefineFertilityNumeric")
 
 #S3 methods:
 S3method("plot", "paramDemoLT")

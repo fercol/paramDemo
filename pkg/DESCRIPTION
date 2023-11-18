@@ -2,9 +2,9 @@ Package: paramDemo
 Type: Package
 Title: Parametric and non-parametric demographic functions and applications.
 Version: 1.0.0
-Date: 2021-10-27
+Date: 2023-11-18
 Author: Fernando Colchero
-Maintainer: Fernando Colchero <colchero@imada.sdu.dk>
+Maintainer: Fernando Colchero <fernando_colchero@eva.mpg.de>
 Depends: R (>= 2.10)
 Imports: 
 Description: Functions to extract demographic information from parametric mortality and Fertility models, summary statistics (e.g. ageing rates, life expectancy, lifespan equality, etc.), life table and product limit estimator calculation from census data.
