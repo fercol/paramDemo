@@ -42,7 +42,7 @@ where \eqn{X} is a random variable for ages at death, \eqn{x \geq 0} are ages an
 S(x | \theta) = \exp[-\int_0^x \mu(t | \theta) dt].
 }
 
-(For further details on the mortality and survival models see \code{\link{CalcSurv}}). 
+(For further details on the mortality and survival models see \code{\link{CalcMort}}). 
 
 Given a vector of ages \eqn{x_1, x_2, \dots, x_n} specified by the user with argument \code{x}, the function calculates the remaining life expectancy at age \eqn{x_i} as
 \deqn{

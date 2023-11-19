@@ -30,7 +30,7 @@ The function \code{CalcAgeingRateMort} uses parametric functions to calculate th
 \deqn{
 \mu(x | \theta) = \lim_{\Delta x \rightarrow 0} \frac{\Pr[x < X < x + \Delta x | X > x]}{\Delta x},
 }
-where \eqn{X} is a random variable for ages at death, \eqn{x \geq 0} are ages and \eqn{\theta} is the vector of mortality parameters. (For further details on the mortality and survival models see \code{\link{CalcSurv}}). 
+where \eqn{X} is a random variable for ages at death, \eqn{x \geq 0} are ages and \eqn{\theta} is the vector of mortality parameters. (For further details on the mortality and survival models see \code{\link{CalcMort}}). 
 
 Given a vector of ages \eqn{x_1, x_2, \dots, x_n} specified by the user with argument \code{x}, the function calculates ageing rates at age \eqn{x_i} as
 \deqn{

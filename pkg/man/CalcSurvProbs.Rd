@@ -30,7 +30,7 @@ FILL UP
 
 \seealso{FILL UP}
 
-\examples{FILL UP}
+\examples{}
 
 \keyword{FILL UP}
 

@@ -42,7 +42,7 @@
 
 	\item{agesAR }{Numerical vector of ages at which ageing rates should be calculated. If \code{NULL} (default) they are calculated at the ages when the survival function reaches 0.5, 0.2, and 0.05. }
 
-	\item{SxValsAR }{Numerical value for the levels of survival at which ageing rates should be calculated. If \code{NULL} (default) they are calculated at the ages when the survival function reaches 0.5, 0.2, and 0.05.}
+	\item{SxValsAR }{Alternative to \code{agesAR}, numerical value for the levels of survival at which ageing rates should be calculated. If \code{NULL} (default) they are calculated at the ages when the survival function reaches 0.5, 0.2, and 0.05.}
 
 }
 
@@ -144,7 +144,7 @@ Note that in this example the parameter names are specified directly, this is re
 
 If argument \code{checkTheta} is set to \code{TRUE}, then the vector of \code{theta} parameters is verified for consistency with the requirements of the model and shape selected. 
 
-\subsection{3) AGE-SPECIFIC FERTILITY MODELS:}
+\subsection{3) Age-specific fertility models:}
 
 The age-specific fertility models correspond to the expected number of offspring produced by adults of a given age. Therefore, for a random variable \eqn{Y_{x}} with realizations \eqn{y_x} for the number of offspring produced by adults of age \eqn{x}, we have that \eqn{E(Y_x) = g(x | \bm{\beta})}, where \eqn{g: \mathbb{R}_{\ge 0} \rightarrow \mathbb{R}_{\ge 0}} is a non-negative smooth fertility function and \eqn{\bm{\beta}} is a vector of parameters to be estimated. The functional forms of function \eqn{g} fall in two main categories, namely polynomial and distributional models.
 
@@ -161,7 +161,7 @@ The distributional models are of the form
 where \eqn{f: \mathbb{R}_{\ge 0} \rightarrow \mathbb{R}_{\ge 0}} is a probability density function, \eqn{R > 0} is a parameter for the total fertility rate, and \eqn{\bm{\beta}_1 \subset \bm{\beta}} is a vector of parameters. The
 \dQuote{\code{Hadwiger}} (Hadwiger 1940), \dQuote{\code{gamma}} (Hoem \emph{et al.} 1981), \dQuote{\code{beta}}  (Hoem \emph{et al.} 1981), \dQuote{\code{skewNormal}} (Mazzuco and Scarpa 2011, 2015), \dQuote{\code{gammaMixture}} (Hoem \emph{et al.} 1981), \dQuote{\code{HadwigerMixture}} (Chandola \emph{et al.} 1991), \dQuote{\code{skewSymmetric}} (Mazzuco and Scarpa 2011, 2015), and \dQuote{\code{skewLogistic}} (Asili \emph{et al.} 2014) all fall in this category. Notably, the \dQuote{\code{gammaMixture}}, \dQuote{\code{HadwigerMixture}}, \dQuote{\code{skewSymmetric}}, \dQuote{\code{skewLogistic}} are appropriate when fertility might be bimodal (Hoem \emph{et al.} 1981, Chandola \emph{et al.} 1999, Mazzuco and Scarpa 2011, 2015, Asili \emph{et al.} 2014). 
 
-\subsection{4) SPECIFYING BETA PARAMETERS:}
+\subsection{4) Specifiying beta parameters:}
 
 Argument \code{beta} requires a vector of parameters. For instance, for a quadratic model with parameter vector \eqn{\bm{\beta}^{\top} = [b_0, b_1, b_2]} where \eqn{b_0 = 0.5}, \eqn{b_1 = 0.01} and \eqn{b_2 = 10}, the argument should be specified as
 
@@ -170,6 +170,62 @@ Argument \code{beta} requires a vector of parameters. For instance, for a quadra
 Note that in this example the parameter names are specified directly, this is required when \code{checkBeta = FALSE}. Although assigning the names to each parameter is not necessary when \code{checkBeta = TRUE}, it is advisable to ensure that the right values are assigned to the right parameter.  
 
 If argument \code{checkBeta} is set to \code{TRUE}, then the vector of \code{beta} parameters is verified for consistency with the requirements of the fertility model selected. 
+
+\subsection{5) Summary statistics:}
+
+\code{5.1) Ageing rates:}
+
+Given a vector of ages \eqn{x_1, x_2, \dots, x_n} specified by the user with argument \code{agesAR}, the function calculates ageing rates at age \eqn{x_i} as
+\deqn{
+\frac{d}{dx}\ln [\mu(x)] |_{x = x_i}, 
+}
+for \eqn{i = 1, 2, \dots, n}.
+
+\code{5.2) Ages at different levels of survival:}
+
+The function calculates the ages when the survival function reaches specific values(default at 0.2, 0.1, 0.05), commonly used as population measures of old age. Thus, for a given value \eqn{s = S(x)}, the function computes the inverse function
+\deqn{
+x = S^{-1}(s).
+}
+
+\code{5.3) Remaining life expectancy:}
+
+The function calculates the life expectancy at birth as
+\deqn{
+e_{0} = \int_{0}^{\infty} S(t) dt.
+}
+
+\code{5.4) Measures of inequality and equality:}
+
+The function calculates different measures of inequality and equality in the distribution of ages at death that results from the parametric model:
+
+- \code{Lifespan inequality:} (Demetrius 1974, Keyfitz and Caswell 2005) given by
+
+\deqn{
+H = -\frac{\int_{0}^{\infty} S(x) \ln [S(x)] dx}{e_0}
+}
+
+- \code{Lifespan equality:} (Colchero \emph{et al.} 2016, Colchero \emph{et al.} 2021) given by
+
+\deqn{
+\varepsilon = - \ln H.
+}
+
+- \code{Gini coefficient:} (Gini 1912, Shkolnikov \emph{et al.} 2003) given by
+
+\deqn{
+G = 1 - \frac{1}{e_0} \int_0^{\infty} [l(x)]^2 dx
+}
+
+- \code{Coefficient of variation:} given by
+
+\deqn{
+CV = \frac{\sqrt{\sigma^2}}{e_0},
+}
+where \eqn{\sigma^2} is the variance in ages at death.
+
+}
+
 
 }
 
@@ -202,6 +258,8 @@ Colchero, F., \emph{et al.}  (2021) The long lives of primates and the "invarian
 
 Cox, D. R., and Oakes D. (1984) \emph{Analysis of Survival Data}. Chapman and Hall, London.
 
+Demetrius, L. (1974) Demographic parameters and natural selection. \emph{PNAS} 71, 4645–4647.
+  
 Gompertz, B. (1825) On the nature of the function expressive of the law of human mortality, and on a new mode of determining the value of life contingencies. \emph{Philosophical Transactions of the Royal Society of London}, 115, 513-583.
 
 Hadwiger, H. (1940) Eine analytische Reproduktionssunktion fur biologische Gesamtheiten. \emph{Scandinavian Actuarial Journal}, 1940, 101-113.
@@ -221,6 +279,8 @@ Peristera, P. & Kostaki, A. (2007) Modeling fertility in modern populations. \em
 Pinder III, J.E., Wiener, J.G. and Smith, M.H. (1978) The Weibull distribution: a new method of summarizing survivorship data. \emph{Ecology}, 59, 175-179.
 
 Makeham, W. M. On the law of mortality (1866). \emph{Journal of the Institute of Actuaries} 13, 1–34.
+
+Shkolnikov, V., Andreev, E. & Begun, A. Z. (2003) Gini coefficient as a life table function. \emph{Demographic Research} 8, 305–358.
   
 Siler, W. A  (1979) competing-risk model for animal mortality. \emph{Ecology} 60, 750–757.
   
