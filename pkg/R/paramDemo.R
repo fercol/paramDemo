@@ -212,7 +212,7 @@
     BETLOW <- all(beta >= defBeta$low)
   }
   if (is.matrix(beta)) {
-    BETUPP <- all(sapply(1:nBe, function(bi) {
+    BETUPP <- all(sapply(1:defBeta$p, function(bi) {
       bl <- all(beta[, bi] <= defBeta$upp[bi])
     }))
   } else {
@@ -1779,6 +1779,9 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
 # Calculation of life table CIs:
 CalcLifeTableCIs <- function(ageLast, ageFirst = NULL, departType, 
                              nboot = 2000, alpha = 0.05, dx = 1) {
+  # Number of records:
+  n <- length(ageLast)
+  
   # Set age first to 0 if NULL:
   if (is.null(ageFirst)) {
     ageFirst <- rep(0, n)
