@@ -47,15 +47,15 @@
 }
 
 \details{
-\code{1) AGE-SPECIFIC MORTALITY AND SURVIVAL MODELS:}
+\subsection{1) Age-specific mortality and survival models:}
 
-The function \code{CalcSurv} uses parametric functions to calculate age-specific survival, defined as the probability of surviving to a given age. The function follows the conventions from package BaSTA (Colchero and Clark 2012, Colchero \emph{et al.} 2012, Colchero \emph{et al.} 2021). The mortality function describes how the risk of mortality changes with age, and is defined as 
+The function \code{CalcDemo} uses parametric functions to calculate age-specific survival, defined as the probability of surviving to a given age. The function follows the conventions from package BaSTA (Colchero and Clark 2012, Colchero \emph{et al.} 2012, Colchero \emph{et al.} 2021). The mortality function describes how the risk of mortality changes with age, and is defined as 
 \deqn{
 \mu(x | \theta) = \lim_{\Delta x \rightarrow 0} \frac{\Pr[x < X < x + \Delta x | X > x]}{\Delta x},
 }
 where \eqn{X} is a random variable for ages at death, \eqn{x \geq 0} are ages and \eqn{\theta} is the vector of mortality parameters. From the mortality function, the survival function is then given by
 \deqn{
-S(x | \theta) = \exp[-\int_0^x \mu(t | \theta) dt].
+S(x | \bm{\theta}) = \exp[-\int_0^x \mu(t | \bm{\theta}) dt].
 }
 
 \code{1.1)}\code{Argument }\dQuote{\code{model}}\code{:}
@@ -64,37 +64,37 @@ The \code{model} argument allows the user to choose between four basic mortality
 
 (a) \code{model = }\dQuote{\code{EX}}: The exponential model (Cox and Oakes 1974), with constant mortality with age, specified as
 
-\deqn{\mu_b(x | b) = b,}
+\deqn{\mu_b(x | \bm{\theta}) = b,}
 
 where \eqn{b > 0}, with survival 
 \deqn{
-S_b(x | \theta) = \exp[-b x].
+S_b(x | \bm{\theta}) = \exp[-b x].
 }
 
 (b) \code{model = }\dQuote{\code{GO}}: The Gompertz mortality model (Gompertz 1925, Pletcher 1999), calculated as 
 
-\deqn{\mu_b(x | b) = \exp(b_0 + b_1 x),}
+\deqn{\mu_b(x | \bm{\theta}) = \exp(b_0 + b_1 x),}
 
 where \eqn{-\infty < b_0, b_1 < \infty}, with survival
 \deqn{
-S_b(x | \theta) = \exp\left[\frac{e^{b_0}}{b_1}\left(1 - e^{b_1 x}\right)\right].
+S_b(x | \bm{\theta}) = \exp\left[\frac{e^{b_0}}{b_1}\left(1 - e^{b_1 x}\right)\right].
 }
 
 (c) \code{model = }\dQuote{\code{WE}}: The Weibull mortality model (Pinder III \emph{et al.} 1978) calculated as
 
-\deqn{\mu_b(x | b) = b_0 b_1^{b_0} x^{b_0 -1},}
+\deqn{\mu_b(x | \bm{\theta}) = b_0 b_1^{b_0} x^{b_0 -1},}
 
 where \eqn{b_0, b_1 > 0}, with survival
 \deqn{
-S_b(x | \theta) = \exp\left[-(b_1 x)^{b_0}\right].
+S_b(x | \bm{\theta}) = \exp\left[-(b_1 x)^{b_0}\right].
 }
 
 (d) \code{model = }\dQuote{\code{LO}}: The logistic mortality model (Pletcher 1999), calculated as 
 
-\deqn{\mu_b(x | b) = \frac{\exp(b_0 + b_1 x)}{1 + b_2 \frac{e^{b_0}}{b_1} \left(e^{b_1 x}-1\right)},}
+\deqn{\mu_b(x | \bm{\theta}) = \frac{\exp(b_0 + b_1 x)}{1 + b_2 \frac{e^{b_0}}{b_1} \left(e^{b_1 x}-1\right)},}
 where \eqn{b_0, b_1, b_2 > 0}, with survival
 \deqn{
-S_b(x | \theta) = \left[1 + b_2 \frac{e^{b_0}}{b_1} \left(e^{b_1 x} - 1\right)\right]^{-1 / b_2}.
+S_b(x | \bm{\theta}) = \left[1 + b_2 \frac{e^{b_0}}{b_1} \left(e^{b_1 x} - 1\right)\right]^{-1 / b_2}.
 }
 
 \code{1.2)}\code{Argument }\dQuote{\code{shape}}\code{:}
@@ -103,67 +103,80 @@ The \code{shape} argument allows the user to extend these models in order to exp
 
 (a) \code{shape = }\dQuote{\code{simple}}: (default) Leaves the model as defined above, with mortality given by
 \deqn{
-\mu(x | \theta) = \mu_b(x | \theta)
+\mu(x | \bm{\theta}) = \mu_b(x | \bm{\theta})
 }
 and survival
 \deqn{
-S(x | \theta) = S_b(x | \theta).
+S(x | \bm{\theta}) = S_b(x | \bm{\theta}.
 }
 
 (b) \code{shape = }\dQuote{\code{Makeham}}: A constant is added to the mortality, such that the mortality is given by
 \deqn{
-\mu(x | \theta) = c + \mu_b(x | \theta_1),
+\mu(x | \bm{\theta}) = c + \mu_b(x | \bm{\theta}_1),
 }
-where \eqn{\theta = [c, \theta_1]}, and with survival
+where \eqn{\bm{\theta} = [c, \bm{\theta}_1]}, and with survival
 \deqn{
-S(x | \theta) = e^{-cx} S_b(x | \theta_1)
+S(x | \bm{\theta}) = e^{-cx} S_b(x | \bm{\theta}_1)
 }
+
+The most common models with this shape is the Gompertz-Makeham model (Gompertz 1825, Makeham 1866).
 
 (c) \code{shape = }\dQuote{\code{bathtub}}: produces a concave shapes in mortality by adding a declining Gompertz term and a constant parameter to the basic mortality model, where the mortality function is
 \deqn{
-\mu(x | \theta) = \exp(a_0 - a_1 x) + c + \mu_b(x | \theta_1),
+\mu(x | \bm{\theta}) = \exp(a_0 - a_1 x) + c + \mu_b(x | \bm{\theta}_1),
 }
-where \eqn{a_0 \in \mathbb{R}}, \eqn{a_1, c \geq 0} and \eqn{\theta_1 \in \theta} are specified based on argument \code{model}, and with survival
+where \eqn{a_0 \in \mathbb{R}}, \eqn{a_1, c \geq 0} and \eqn{\bm{\theta}_1 \subset \bm{\theta}} are specified based on argument \code{model}, and with survival
 \deqn{
 S(x | \theta) = \exp\left[\frac{e^{a_0}}{a_1}\left(e^{a_1 x} - 1\right)-cx\right] S_b(x | \theta_1).
 }
 
-\code{2) AGE-SPECIFIC FERTILITY MODELS:}
+The most widely use \dQuote{\code{bathtub}} shaped model is the \bold{Siler mortality model} (Siler 1979), which provides considerably good fits to mammalian data. The arguments for the Siler model are:
 
-The age-specific fertility models correspond to the expected number of offspring produced by adults of a given age. Therefore, for a random variable \eqn{Y_{x}} with realizations \eqn{y_x} for the number of offspring produced by adults of age \eqn{x}, we have that \eqn{E(Y_x) = g(x | \beta)}, where \eqn{g: \mathbb{R}_{\ge 0} \rightarrow \mathbb{R}_{\ge 0}} is a non-negative smooth fertility function and \eqn{\beta} is a vector of parameters to be estimated. The functional forms of function \eqn{g} fall in two main categories, namely polynomial and distributional models.
+\preformatted{CalcDemo(..., model = "GO", shape = "bathtub", ...)}
 
-2.a) Polynomial:
+\subsection{2) Specifying theta parameters:}
 
-Of the models available in \code{paramDemo}, the \dQuote{\code{quadratic}}, \dQuote{\code{PeristeraKostaki}} (Peristera and Kostaki 2007), and \dQuote{\code{ColcheroMuller}} (Colchero  \emph{et al.} 2021, Muller \emph{et al.} 2020) fall within the polynomial category. Both, the \dQuote{\code{PeristeraKostaki}} and \dQuote{\code{ColcheroMuller}} are non-symmetric around the age at maximum fertility.
+Argument \code{theta} requires a numerical vector of parameters. For instance, for a Gompertz model with simple shape and with parameter vector \eqn{\bm{\theta}^{\top} = [b_0, b_1]} where \eqn{b_0 = -5} and \eqn{b_1 = 0.1}, the argument should be specified as 
 
-2.b) Distributional:
+\code{CalcDemo(theta = c(b0 = -5, b1 = 0.1), ...)} 
 
-The distributional models are of the form
-
-\deqn{g(x | \beta) = R f(x | \beta_1),}
-
-where \eqn{f: \mathbb{R}_{\ge 0} \rightarrow \mathbb{R}_{\ge 0}} is a probability density function, \eqn{R > 0} is a parameter for the total fertility rate, and \eqn{\beta_1 \in \beta} is a vector of parameters. The
-\dQuote{\code{Hadwiger}} (Hadwiger 1940), \dQuote{\code{gamma}} (Hoem \emph{et al.} 1981), \dQuote{\code{beta}}  (Hoem \emph{et al.} 1981), \dQuote{\code{skewNormal}} (Mazzuco and Scarpa 2011, 2015), \dQuote{\code{gammaMixture}} (Hoem \emph{et al.} 1981), \dQuote{\code{HadwigerMixture}} (Chandola \emph{et al.} 1991), \dQuote{\code{skewSymmetric}} (Mazzuco and Scarpa 2011, 2015), and \dQuote{\code{skewLogistic}} (Asili \emph{et al.} 2014) all fall in this category. Notably, the \dQuote{\code{gammaMixture}}, \dQuote{\code{HadwigerMixture}}, \dQuote{\code{skewSymmetric}}, \dQuote{\code{skewLogistic}} are appropriate when fertility might be bimodal (Hoem \emph{et al.} 1981, Chandola \emph{et al.} 1999, Mazzuco and Scarpa 2011, 2015, Asili \emph{et al.} 2014). 
-
-\code{3) SPECIFYING THETA PARAMETERS:}
-
-Argument \code{theta} requires a numerical vector of parameters. For instance, for a Gompertz model with simple shape and with parameter vector \eqn{\theta^{\top} = [-5, 0.1]}, the argument should be specified as \code{theta = c(b0 = -5, b1 = 0.1)}. Note that in this example the parameter names are specified directly, this is required when \code{checkTheta = FALSE}. Although assigning the names to each parameter is not necessary when \code{checkTheta = TRUE}, it is advisable to ensure that the right values are assigned to the right parameter.  
+Note that in this example the parameter names are specified directly, this is required when \code{checkTheta = FALSE}. Although assigning the names to each parameter is not necessary when \code{checkTheta = TRUE}, it is advisable to ensure that the right values are assigned to the right parameter.  
 
 If argument \code{checkTheta} is set to \code{TRUE}, then the vector of \code{theta} parameters is verified for consistency with the requirements of the model and shape selected. 
 
-\code{4) SPECIFYING BETA PARAMETERS:}
+\subsection{3) AGE-SPECIFIC FERTILITY MODELS:}
 
-Argument \code{beta} requires a vector of parameters. For instance, for a quadratic model with parameter vector \eqn{\beta^{\top} = [0.5, 0.01, 10]}, the argument should be specified as \code{theta = c(b0 = 0.5, b1 = 0.01, b2 = 10)}. Note that in this example the parameter names are specified directly, this is required when \code{checkBeta = FALSE}. Although assigning the names to each parameter is not necessary when \code{checkBeta = TRUE}, it is advisable to ensure that the right values are assigned to the right parameter.  
+The age-specific fertility models correspond to the expected number of offspring produced by adults of a given age. Therefore, for a random variable \eqn{Y_{x}} with realizations \eqn{y_x} for the number of offspring produced by adults of age \eqn{x}, we have that \eqn{E(Y_x) = g(x | \bm{\beta})}, where \eqn{g: \mathbb{R}_{\ge 0} \rightarrow \mathbb{R}_{\ge 0}} is a non-negative smooth fertility function and \eqn{\bm{\beta}} is a vector of parameters to be estimated. The functional forms of function \eqn{g} fall in two main categories, namely polynomial and distributional models.
 
-If argument \code{checkBeta} is set to \code{TRUE}, then the vector of \code{beta} parameters is verified for consistency with the requirements of the model and shape selected. 
+3.a) Polynomial:
+
+Of the models available in \code{paramDemo}, the \dQuote{\code{quadratic}}, \dQuote{\code{PeristeraKostaki}} (Peristera and Kostaki 2007), and \dQuote{\code{ColcheroMuller}} (Colchero  \emph{et al.} 2021, Muller \emph{et al.} 2020) fall within the polynomial category. Both, the \dQuote{\code{PeristeraKostaki}} and \dQuote{\code{ColcheroMuller}} are non-symmetric around the age at maximum fertility.
+
+3.b) Distributional:
+
+The distributional models are of the form
+
+\deqn{g(x | \bm{\beta}) = R f(x | \bm{\beta}_1),}
+
+where \eqn{f: \mathbb{R}_{\ge 0} \rightarrow \mathbb{R}_{\ge 0}} is a probability density function, \eqn{R > 0} is a parameter for the total fertility rate, and \eqn{\bm{\beta}_1 \subset \bm{\beta}} is a vector of parameters. The
+\dQuote{\code{Hadwiger}} (Hadwiger 1940), \dQuote{\code{gamma}} (Hoem \emph{et al.} 1981), \dQuote{\code{beta}}  (Hoem \emph{et al.} 1981), \dQuote{\code{skewNormal}} (Mazzuco and Scarpa 2011, 2015), \dQuote{\code{gammaMixture}} (Hoem \emph{et al.} 1981), \dQuote{\code{HadwigerMixture}} (Chandola \emph{et al.} 1991), \dQuote{\code{skewSymmetric}} (Mazzuco and Scarpa 2011, 2015), and \dQuote{\code{skewLogistic}} (Asili \emph{et al.} 2014) all fall in this category. Notably, the \dQuote{\code{gammaMixture}}, \dQuote{\code{HadwigerMixture}}, \dQuote{\code{skewSymmetric}}, \dQuote{\code{skewLogistic}} are appropriate when fertility might be bimodal (Hoem \emph{et al.} 1981, Chandola \emph{et al.} 1999, Mazzuco and Scarpa 2011, 2015, Asili \emph{et al.} 2014). 
+
+\subsection{4) SPECIFYING BETA PARAMETERS:}
+
+Argument \code{beta} requires a vector of parameters. For instance, for a quadratic model with parameter vector \eqn{\bm{\beta}^{\top} = [b_0, b_1, b_2]} where \eqn{b_0 = 0.5}, \eqn{b_1 = 0.01} and \eqn{b_2 = 10}, the argument should be specified as
+
+\code{CalcDemo(..., theta = c(b0 = 0.5, b1 = 0.01, b2 = 10), ...)}
+
+Note that in this example the parameter names are specified directly, this is required when \code{checkBeta = FALSE}. Although assigning the names to each parameter is not necessary when \code{checkBeta = TRUE}, it is advisable to ensure that the right values are assigned to the right parameter.  
+
+If argument \code{checkBeta} is set to \code{TRUE}, then the vector of \code{beta} parameters is verified for consistency with the requirements of the fertility model selected. 
 
 }
 
 \value{
-The output consist of two lists, one for survival and one for fertility. The survival list can be called as \code{object$surv} while the fertility list is in \code{object$fert}. Both include the following outputs:
-  \item{functs }{data.frame including the follwing columns for survival \code{age}, \code{mort} for the mortality function, \code{surv} for the survival, \code{pdf} for the probability density function of ages at death, and \code{cumhaz} for the cumulative hazards. For fertility it includes columns for \code{age} and \code{fert} for the age-specific fertility.} 
+The output consist of two lists, one for survival and one for fertility. The survival list can be called as \code{object$surv} while the fertility list is in \code{object$fert}. Both include the following outputs: \item{functs }{data.frame including the follwing columns for survival: \code{age}, \code{mort} for the mortality function, \code{surv} for the survival, \code{pdf} for the probability density function of ages at death, and \code{cumhaz} for the cumulative hazards. For fertility it includes columns for \code{age} and \code{fert} for the age-specific fertility.} 
   
-  \item{summStats }{list with elements \code{calculated} indicating whether summary statistics were calculated, \code{ageingRates} with the resulting actuarial ageing rates, and \code{summStatsMort} with ages at which the survival function reaches different levels (default 0.5, 0.2, 0.05) (e.g., \code{AgeSx=0.5}), with the life expectancy \code{lifeExp}, \code{lifespIneq} for the lifespan inequality (see Demetrius 1974), \code{lifespEqual} with the lifespan equality as in Colchero \emph{et al.} (2021), \code{Gini} for the Gini coefficient, and \code{CoeffVar} for the coefficient of variation in the distribution of ages at death. For fertility, the list includes a logical \code{calculated} to indicate if summary statistics were calculated, and \code{summStatsFert} with the age at maximum fertility calculations (see \code{\link{CalcAgeMaxFert}}).} 
+  \item{summStats }{list with elements: \code{calculated} indicating whether summary statistics were calculated, \code{ageingRates} with the resulting actuarial ageing rates, and \code{summStatsMort} with ages at which the survival function reaches different levels (default 0.5, 0.2, 0.05) (e.g., \code{AgeSx=0.5}), with the life expectancy \code{lifeExp}, \code{lifespIneq} for the lifespan inequality (see Demetrius 1974), \code{lifespEqual} with the lifespan equality as in Colchero \emph{et al.} (2021), \code{Gini} for the Gini coefficient, and \code{CoeffVar} for the coefficient of variation in the distribution of ages at death. For fertility, the list includes a logical \code{calculated} to indicate if summary statistics were calculated, and \code{summStatsFert} with the age at maximum fertility calculations (see \code{\link{CalcAgeMaxFert}}).} 
   
   \item{settings }{list with the details of the parameters and the models used.} 
   
@@ -195,6 +208,8 @@ Hadwiger, H. (1940) Eine analytische Reproduktionssunktion fur biologische Gesam
 
 Hoem, J.M., Madien, D., Nielsen, J.L., Ohlsen, E.M., Hansen, H.O. & Rennermalm, B. (1981) Experiments in modelling recent Danish fertility curves. \emph{Demography}, 18, 231-244.
 
+Makeham, W. M. On the law of mortality (1866). \emph{Journal of the Institute of Actuaries} 13, 1–34.
+  
 Mazzuco, S. & Scarpa, B. (2011) Fitting age-specific fertility rates by a skew- symmetric probability density function. (Working paper 10), University of Padua.
 
 Mazzuco, S. & Scarpa, B. (2015) Fitting age-specific fertility rates by a flexible generalized skew normal probability density function. \emph{Journal of the Royal Statistical Society: Series A}, 178, 187-203.
@@ -205,6 +220,10 @@ Peristera, P. & Kostaki, A. (2007) Modeling fertility in modern populations. \em
 
 Pinder III, J.E., Wiener, J.G. and Smith, M.H. (1978) The Weibull distribution: a new method of summarizing survivorship data. \emph{Ecology}, 59, 175-179.
 
+Makeham, W. M. On the law of mortality (1866). \emph{Journal of the Institute of Actuaries} 13, 1–34.
+  
+Siler, W. A  (1979) competing-risk model for animal mortality. \emph{Ecology} 60, 750–757.
+  
 }
 \author{Fernando Colchero \email{fernando_colchero@eva.mpg.de}}
 
