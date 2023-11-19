@@ -9,6 +9,16 @@ export("CalcAgeingRateMort", "CalcAgeMaxFert", "CalcAveDemo", "CalcDemo",
        ".DefineCumHazNumeric", ".DefineFertilityMatrix", 
        ".DefineFertilityNumeric")
 
+# Import package snowfall
+importFrom("grDevices", "adjustcolor", "rainbow")
+importFrom("graphics", "axis", "layout", "legend", "lines", "mtext",
+             "par", "plot", "polygon", "text", "Axis")
+importFrom("stats", "as.formula", "cor", "density", "dnorm",
+             "model.matrix", "pnorm", "qnorm", "quantile", 
+             "rnorm", "runif", "sd", "terms", "var", "dgamma", "pgamma",
+           "rgamma", "qgamma", "dbeta", "rbeta", "pbeta", "qbeta", "optim")
+importFrom("utils", "packageDescription")
+
 #S3 methods:
 S3method("plot", "paramDemoLT")
 S3method("plot", "paramDemoLTCIs")
