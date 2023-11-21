@@ -9,7 +9,7 @@
  \code{CalcLifeTable} uses non-parametric methods to calculate life tables.
 }
 
-\usage{CalcLifeTable (ageLast, ageFirst = NULL, departType, dx = 1)}
+\usage{CalcLifeTable(ageLast, ageFirst = NULL, departType, dx = 1)}
 
 \arguments{
 	\item{ageLast }{Numerical vector with the ages at last detection (i.e., death and censoring) (see \code{details})}
@@ -111,7 +111,14 @@ Preston, S.H., Heuveline, P. and Guillot, M. (2001) Demography: Measuring and Mo
 \author{Fernando Colchero \email{fernando_colchero@eva.mpg.de}}
 
 \seealso{
+
+\code{\link{CalcLifeTableCIs}} to calculate life table demographic rates with confidence intervals.
+
 \code{\link{CalcProductLimitEst}} to calculate product limit estimators.
+
+\code{\link{CalcProductLimitEstCIs}} to calculate product limit estimators with confidence intervals.
+
+
 }
 
 \examples{

@@ -9,7 +9,7 @@
  \code{CalcLifeTableCIs} uses non-parametric bootstrap to calculate confidence intervals for a life table.
 }
 
-\usage{CalcLifeTableCIs (ageLast, ageFirst = NULL, departType, 
+\usage{CalcLifeTableCIs(ageLast, ageFirst = NULL, departType, 
                   nboot = 2000,  alpha = 0.05, dx = 1)}
 
 \arguments{
@@ -81,22 +81,45 @@ L_x = l_x (1 - a_x q_x)
 
 \item \code{Tx}: The total number of individual years lived after age \eqn{x}, given by \eqn{T_x = \sum_{j = x}^{\infty} L_j \Delta x}
 
-\item \code{ex}: the remaining life expectancy at the beginning of each age interval, calculated as \eqn{e_x = T_x / l_x}.
-
-
+\item \code{ex}: the remaining life expectancy at the beginning of each age interval, approximated as \eqn{e_x = T_x / l_x}.
 }
 
+\subsection{3) Calculating confidence intervals}
+The function uses a non-parametric bootstrap by sampling with replacement the data. Argument \code{nboot} specifies the number of bootstrap steps, with default \code{nboot = 2000}. From each re-sampled dataset, it uses function \code{\link{CalcLifeTable}} to construct the corresponding life table and stores the values of $l_x$, $q_x$, $p_x$, and $e_x$ from each iteration. From these, it calculates quantiles as at the given alpha level. 
 }
 
 \value{
-	\item{fill up }{FILL UP}
+	\item{lx }{Matrix with Ages and mean and upper and lower CIs for the life table survival}
+	\item{qx }{Matrix with Ages and mean and upper and lower CIs for the age-specific mortality probability}
+	\item{px }{Matrix with Ages and mean and upper and lower CIs for the age-specific survival probability}
+	\item{ex }{Matrix with Ages and mean and upper and lower CIs for the remaining life expectancy}
+	\item{Settings }{Numerical vector including the number of bootstrap iterations, \dQuote{\code{nboot}} and the alpha level \dQuote{\code{alpha}}}
+}
+\references{
+Preston, S.H., Heuveline, P. and Guillot, M. (2001) Demography: Measuring and Modeling Population Processes. Blackwell, Oxford.
 }
 
-\author{Fernando Colchero \email{colchero@imada.sdu.dk}}
+\author{Fernando Colchero \email{fernando_colchero@eva.mpg.de}}
 
-\seealso{FILL UP}
+\seealso{
+\code{\link{CalcLifeTable}} to calculate a simple life table.
 
-\examples{}
+\code{\link{CalcProductLimitEst}} to calculate product limit estimators.
+
+\code{\link{CalcProductLimitEstCIs}} to calculate product limit estimators with confidence intervals.
+
+}
+
+
+\examples{
+# Simulate age at death data from Gompertz model:
+ages <- SampleRandAge(n = 100, theta = c(b0 = -5, b1 = 0.1))
+
+# Calculate life table with 95\% CIs:
+ltCIs <- CalcLifeTable(ageLast = ages, departType = rep("D", 100), 
+                       nboot = 100)
+
+}
 
 \keyword{models}
 
