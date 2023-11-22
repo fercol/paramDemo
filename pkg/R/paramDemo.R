@@ -1682,12 +1682,29 @@ CalcAveDemo <- function(demo) {
 # --------------------- #
 # Calculate life table:
 CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
+  # Error handling:
+  if (missing(ageLast)) {
+    stop("Argument 'ageLast' missing. 
+         Provide vector of ages at last observation.")
+  }
+  
   # Number of records:
   n <- length(ageLast)
   
   # Set age first to 0 if NULL:
   if (is.null(ageFirst)) {
     ageFirst <- rep(0, n)
+  }
+  
+  if (missing(departType)) {
+    stop("Argument 'departType' missing. 
+         Provide character vector of departure types (i.e., 'D' and 'C')")
+  }
+  
+  if (n != length(departType)) {
+    stop("Lengths of 'ageLast' and 'departType' differ.")
+  } else if (n != length(ageFirst)) {
+    stop("Lengths of 'ageLast' and 'ageFirst' differ.")
   }
   
   # Unit age vector for that sex:
@@ -1779,12 +1796,29 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
 # Calculation of life table CIs:
 CalcLifeTableCIs <- function(ageLast, ageFirst = NULL, departType, 
                              nboot = 2000, alpha = 0.05, dx = 1) {
+  # Error handling:
+  if (missing(ageLast)) {
+    stop("Argument 'ageLast' missing. 
+         Provide vector of ages at last observation.")
+  }
+  
   # Number of records:
   n <- length(ageLast)
   
   # Set age first to 0 if NULL:
   if (is.null(ageFirst)) {
     ageFirst <- rep(0, n)
+  }
+  
+  if (missing(departType)) {
+    stop("Argument 'departType' missing. 
+         Provide character vector of departure types (i.e., 'D' and 'C')")
+  }
+  
+  if (n != length(departType)) {
+    stop("Lengths of 'ageLast' and 'departType' differ.")
+  } else if (n != length(ageFirst)) {
+    stop("Lengths of 'ageLast' and 'ageFirst' differ.")
   }
   
   # Unit age vector for that sex:
@@ -2258,8 +2292,30 @@ plot.paramDemoLTCIs <- function(x, demorate = "lx", ...) {
 # ------------------------ #
 # Simple Product-limit estimator function:
 CalcProductLimitEst <- function(ageLast, ageFirst = NULL, departType) {
-  # Number of individuals in dataset:
+  # Error handling:
+  if (missing(ageLast)) {
+    stop("Argument 'ageLast' missing. 
+         Provide vector of ages at last observation.")
+  }
+  
+  # Number of records:
   n <- length(ageLast)
+  
+  # Set age first to 0 if NULL:
+  if (is.null(ageFirst)) {
+    ageFirst <- rep(0, n)
+  }
+  
+  if (missing(departType)) {
+    stop("Argument 'departType' missing. 
+         Provide character vector of departure types (i.e., 'D' and 'C')")
+  }
+  
+  if (n != length(departType)) {
+    stop("Lengths of 'ageLast' and 'departType' differ.")
+  } else if (n != length(ageFirst)) {
+    stop("Lengths of 'ageLast' and 'ageFirst' differ.")
+  }
   
   # Find records with same first and last age:
   idsame <- which(ageLast == ageFirst)
@@ -2267,60 +2323,27 @@ CalcProductLimitEst <- function(ageLast, ageFirst = NULL, departType) {
   # Increase last age by one day:
   ageLast[idsame] <- ageLast[idsame] + 1/365.25
   
-  # create identities and age list:
-  if (is.null(ageFirst)) {
-    allAges <- sort(ageLast)
-    allAgesId <- departType
-  } else {
-    idAgeFirst <- which(ageFirst > min(ageLast))
-    allAges <- c(ageFirst[idAgeFirst], ageLast)
-    allAgesId <- c(rep("F", length(idAgeFirst)), departType)
+  # Product limit estimator:
+  idsort <- sort.int(ageLast, index.return = TRUE)$ix
+  agev <- ageLast[idsort]
+  nage <- length(agev)
+  Cx <- rep(0, nage)
+  delx <- rep(0, nage)
+  for (ii in 1:nage) {
+    idNx <- which(ageFirst <= agev[ii] & ageLast >= agev[ii])
+    Cx[ii] <- length(idNx) / nage
+    if (departType[idsort[ii]] == "D") delx[ii] <- 1
   }
-  
-  allAgeTypes <- c("D", "C", "F")
-  NallTypes <- length(allAgeTypes)
-  ageTypes <- unique(allAgesId)
-  ntypes <- length(ageTypes)
-  idsort <- sort.int(allAges, index.return = TRUE)$ix
-  allAges <- allAges[idsort]
-  allAgesId <- allAgesId[idsort]
-  nAllAges <- length(allAges)
-  unAllAges <- unique(allAges)
-  nages <- length(unAllAges)
-  ageNames <- as.character(unAllAges)
-  
-  # Count by type:
-  recTab <- matrix(0, nages, NallTypes, dimnames = list(ageNames, allAgeTypes))
-  for (at in ageTypes) {
-    idtemp <- rep(0, nAllAges)
-    idEqAt <- which(allAgesId == at)
-    idtemp[idEqAt] <- 1
-    ttemp <- table(allAges, idtemp)
-    temp <- c(ttemp[, 2])
-    recTab[rownames(ttemp), at] <- temp
-  }
-  
-  # Cumulative tables:
-  cumTab <- recTab * 0
-  for (at in ageTypes) {
-    cumTab[, at] <- rev(cumsum(rev(recTab[, at])))
-  }
-  
-  Nx <- cumTab[, "D"] + cumTab[, "C"] - cumTab[, "F"]
-  Dx <- recTab[, "D"]
-  
-  idDead <- which(recTab[, "D"] > 0)
-  ple <- cumprod(1 - c(Dx / Nx)[idDead])
+  ple <- cumprod((1 - 1 / (nage * Cx))^delx)
   
   # Add age 0:
-  Ages <- unAllAges[idDead]
-  if (Ages[1] > 0) {
-    Ages <- c(0, Ages)
+  if (agev[1] > 0) {
+    agev <- c(0, agev)
     ple <- c(1, ple)
   }
   
-  # Fill up table:
-  pleTab <- data.frame(Ages = Ages, ple = ple)
+  pleTab <- data.frame(Ages = agev, ple = ple)
+  
   class(pleTab) <- c("paramDemoPLE")
   return(pleTab)
 }
