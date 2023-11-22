@@ -1,5 +1,5 @@
-\name{Calcfert}
-\alias{Calcfert}
+\name{CalcFert}
+\alias{CalcFert}
 
 \title{
  Calculating Parametric Age-Specific Fertility.

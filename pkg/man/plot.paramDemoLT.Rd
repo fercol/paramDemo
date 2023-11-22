@@ -27,7 +27,6 @@
 
 }
 
-
 \author{Fernando Colchero \email{fernando_colchero@eva.mpg.de}}
 
 \seealso{
@@ -45,5 +44,5 @@ lt <- CalcLifeTable(ageLast = ages, departType = rep("D", 100))
 plot(lt)
 }
 
-\keyword{FILL UP}
+\keyword{models}
 
