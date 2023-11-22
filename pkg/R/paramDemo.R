@@ -759,6 +759,31 @@
 }
 
 # Product limit estimator:
+.CalcPLE <- function(ageLast, ageFirst, departType) {
+  # Product limit estimator:
+  idsort <- sort.int(ageLast, index.return = TRUE)$ix
+  agev <- unique(ageLast[idsort])
+  nage <- length(agev)
+  Cx <- rep(0, nage)
+  delx <- rep(0, nage)
+  for (ii in 1:nage) {
+    idNx <- which(ageFirst <= agev[ii] & ageLast >= agev[ii])
+    Cx[ii] <- length(idNx) / nage
+    idd <- which(ageLast == agev[ii] & departType == "D")
+    delx[ii] <- length(idd)
+  }
+  ple <- cumprod((1 - 1 / (nage * Cx))^delx)
+  
+  # Add age 0:
+  if (agev[1] > 0) {
+    agev <- c(0, agev)
+    ple <- c(1, ple)
+  }
+  # Create data frame:
+  pleTab <- data.frame(Ages = agev, ple = ple)
+  
+  return(pleTab)
+}
 
 # ------------- #
 # AGEING RATES:
@@ -1770,7 +1795,6 @@ CalcAveDemo <- function(demo) {
 # LIFE TABLE FUNCTIONS: 
 # --------------------- #
 # Calculate life table:
-# Calculate life table:
 CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1, 
                           calcCIs = FALSE, nboot = 1000, alpha = 0.05) {
   # Error handling:
@@ -1859,7 +1883,7 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1,
 }
 
 # Plot lifetable:
-plot.paramDemoLT <- function(x, demorate = "lx", ...) {
+plot.paramDemoLT <- function(x, demorate = "lx", inclCIs = FALSE, ...) {
   # Additional arguments:
   args <- list(...)
   
@@ -1966,14 +1990,14 @@ plot.paramDemoLT <- function(x, demorate = "lx", ...) {
     
     par(mar = mar) 
     for (dr in demRates) {
-      agev <- x[, "Ages"]
+      agev <- x$lt[, "Ages"]
       nage <- length(agev)
       if ("xlim" %in% names(args)) {
         xlim <- args$xlim
       } else {
         xlim <- range(agev) * c(0, 1.1)
       }
-      ydr <- x[, dr]
+      ydr <- x$lt[, dr]
       if ("ylim" %in% names(args)) {
         ylim <- args$ylim
       } else {
@@ -1989,6 +2013,25 @@ plot.paramDemoLT <- function(x, demorate = "lx", ...) {
         type <- "l"
       }
       plot(xlim, ylim, col = NA, axes = FALSE, xlab = "", ylab = "")
+      if (inclCIs & x$CIs$Settings["calc"] == 1) {
+        ydrCI <- x$CIs[[dr]]
+        colci <- adjustcolor(col, alpha.f = 0.25)
+        if (dr == "lx") {
+          for (ii in 1:nage) {
+            xp <- agev[ii] + c(0, 1)
+            yp <- ydrCI[ii, c("Lower", "Upper")]
+            polygon(xp[c(1, 2, 2, 1)], yp[c(1, 1, 2, 2)], col = colci, 
+                    border = NA)
+          }
+        } else {
+          xp <- agev
+          yp <- ydrCI[, c("Lower", "Upper")]
+          polygon(c(xp, rev(xp)), c(yp[, 1], rev(yp[, 2])), col = colci, 
+                  border = NA)
+        }
+        
+      }
+      
       lines(agev, ydr, type = type, col = col, lwd = lwd)
       Axis(xlim, side = 1, pos = ylim[1], cex.axis = cex.axis)
       Axis(ylim, side = 2, pos = xlim[1], las = 2, cex.axis = cex.axis)
@@ -2016,14 +2059,14 @@ plot.paramDemoLT <- function(x, demorate = "lx", ...) {
     mtext(xlab, side = 3, line = -2, cex = cex.lab)
     
     par(mar = mar) 
-    agev <- x[, "Ages"]
+    agev <- x$lt[, "Ages"]
     nage <- length(agev)
     if ("xlim" %in% names(args)) {
       xlim <- args$xlim
     } else {
       xlim <- range(agev) * c(0, 1.1)
     }
-    ydr <- x[, dr]
+    ydr <- x$lt[, dr]
     if ("ylim" %in% names(args)) {
       ylim <- args$ylim
     } else {
@@ -2039,7 +2082,24 @@ plot.paramDemoLT <- function(x, demorate = "lx", ...) {
       type <- "l"
     }
     plot(xlim, ylim, col = NA, axes = FALSE, xlab = "", ylab = "")
-    
+    if (inclCIs & x$CIs$Settings["calc"] == 1) {
+      ydrCI <- x$CIs[[dr]]
+      colci <- adjustcolor(col, alpha.f = 0.25)
+      if (dr == "lx") {
+        for (ii in 1:nage) {
+          xp <- agev[ii] + c(0, 1)
+          yp <- ydrCI[ii, c("Lower", "Upper")]
+          polygon(xp[c(1, 2, 2, 1)], yp[c(1, 1, 2, 2)], col = colci, 
+                  border = NA)
+        }
+      } else {
+        xp <- agev
+        yp <- ydrCI[, c("Lower", "Upper")]
+        polygon(c(xp, rev(xp)), c(yp[, 1], rev(yp[, 2])), col = colci, 
+                border = NA)
+      }
+      
+    }
     lines(agev, ydr, type = type, col = col, lwd = lwd)
     Axis(xlim, side = 1, pos = ylim[1], cex.axis = cex.axis)
     Axis(ylim, side = 2, pos = xlim[1], las = 2, cex.axis = cex.axis)
@@ -2048,236 +2108,12 @@ plot.paramDemoLT <- function(x, demorate = "lx", ...) {
   par(op)
 }
 
-# Plotting life table CIs:
-plot.paramDemoLTCIs <- function(x, demorate = "lx", ...) {
-  
-  # Additional arguments:
-  args <- list(...)
-  
-  # Labels for demographic rates:
-  demRates <- c("lx", "qx", "px", "ex")
-  
-  # Check if demorate is properly provided:
-  if (!demorate %in% c(demRates, "all")) {
-    stop("Argument 'demorate' incorrect, values should be 'lx',\n'qx', 'px', 'ex', or 'all'.", call. = FALSE)
-  }
-  
-  # Plot names for demographic rates:
-  demRatesNames <- c(lx = expression(paste("Survival, ", italic(l[x]))),
-                     qx = expression(paste("Mortality probability, ", 
-                                           italic(q[x]))), 
-                     px = expression(paste("Survival probability, ", 
-                                           italic(p[x]))),
-                     ex = expression(paste("Remaining life expectancy, ", 
-                                           italic(e[x]))))
-  
-  # mar values:
-  if ("mar" %in% names(args)) {
-    mar <- args$mar
-  } else {
-    mar <- c(2, 4, 1, 1)
-  }
-  
-  # Line width:
-  if ("lwd" %in% names(args)) {
-    lwd <- args$lwd
-  } else {
-    lwd <- 1
-  }
-  
-  # Axis labels:
-  if ("xlab" %in% names(args)) {
-    xlab <- args$xlab
-  } else {
-    xlab <- expression(paste("Age, ", italic(x)))
-  }
-  if ("ylab" %in% names(args)) {
-    ylab <- args$ylab
-    if (demorate == "all" & length(ylab) != 4) {
-      stop("Length of ylab needs to be four for demorate = 'all'.\nNote variables plotted will be 'lx', 'qx', 'px', and 'ex'.", 
-           call. = FALSE)
-    }
-  } else {
-    if (demorate == "all") {
-      ylab <- demRatesNames
-    } else {
-      ylab <- demRatesNames[demorate]
-    }
-  }
-  
-  # Colors:
-  if ("col" %in% names(args)) {
-    if (length(args$col) < 2) {
-      cols <- c(mean = "#800026", cis = "#FC4E2A")
-    } else {
-      cols <- args$col[1:2]
-      names(cols) <- c("mean", "cis")
-    }
-  } else {
-    cols <- c(mean = "#800026", cis = "#FC4E2A")
-  }
-  
-  # Cex.lab:
-  if ("cex.lab" %in% names(args)) {
-    cex.lab <- args$cex.lab
-  } else {
-    cex.lab <- 1
-  }
-  
-  # Cex.axis:
-  if ("cex.axis" %in% names(args)) {
-    cex.axis <- args$cex.axis
-  } else {
-    cex.axis <- 1
-  }
-  
-  # Cex.legend:
-  if ("cex.legend" %in% names(args)) {
-    cex.legend <- args$cex.legend
-  } else {
-    cex.legend <- 1
-  }
-  
-  # Produce plots:
-  op <- par(no.readonly = TRUE)
-  if (demorate == "all") {
-    # -------------- #
-    # MULTIPLE PLOTS:
-    # -------------- #
-    # Layout matrix:
-    laymat <- cbind(c(2, 4, 1), c(3, 5, 1))
-    
-    # Widths and heights:
-    widths <- c(1, 1)
-    heights <- c(1, 1, 0.15)
-    
-    # produce plot:
-    layout(mat = laymat, widths = widths, heights = heights)
-    
-    # x-axis label:
-    par(mar = mar * c(0, 1, 0, 1))
-    plot(c(0, 1), c(0, 1), col = NA, xlab = "", ylab = "", axes = FALSE)
-    text(0.5, 0.5, xlab, cex = 1.5 * cex.lab)
-    legend('right', c("Life table", "CIs"), col = cols, pch = c(NA, 15), 
-           lwd = c(lwd, NA), pt.cex = c(NA, 2), bty = "n", cex = cex.legend)
-    
-    par(mar = mar) 
-    for (dr in demRates) {
-      agev <- x[[dr]][, "Ages"]
-      nage <- length(agev)
-      if ("xlim" %in% names(args)) {
-        xlim <- args$xlim
-      } else {
-        xlim <- range(agev) * c(0, 1.1)
-      }
-      ydr <- x[[dr]][, -1]
-      if ("ylim" %in% names(args)) {
-        ylim <- args$ylim
-      } else {
-        if (dr != "ex") {
-          ylim <- c(0, 1)
-        } else {
-          ylim <- c(0, max(ydr))
-        }
-      }
-      if (dr == "lx") {
-        type <- "s"
-      } else {
-        type <- "l"
-      }
-      plot(xlim, ylim, col = NA, axes = FALSE, xlab = "", ylab = "")
-      if (dr == "lx") {
-        for (ii in 1:nage) {
-          xp <- agev[ii] + c(0, 1)
-          yp <- ydr[ii, c("Lower", "Upper")]
-          polygon(xp[c(1, 2, 2, 1)], yp[c(1, 1, 2, 2)], col = cols["cis"], 
-                  border = NA)
-        }
-      } else {
-        xp <- agev
-        yp <- ydr[, c("Lower", "Upper")]
-        polygon(c(xp, rev(xp)), c(yp[, 1], rev(yp[, 2])), col = cols["cis"], 
-                border = NA)
-      }
-      lines(agev, ydr[, dr], type = type, col = cols["mean"], lwd = lwd)
-      Axis(xlim + c(0, 10), side = 1, pos = ylim[1], cex.axis = cex.axis)
-      Axis(ylim, side = 2, pos = xlim[1], las = 2, cex.axis = cex.axis)
-      mtext(ylab[dr], side = 2, line = mar[2] / 2, cex = cex.lab)
-    }    
-  } else {
-    # ------------ #
-    # SINGLE PLOT:
-    # ------------ #
-    dr <- demorate
-    # Layout matrix:
-    laymat <- matrix(c(2, 1), nrow = 2, ncol = 1)
-    
-    # Widths and heights:
-    widths <- c(1)
-    heights <- c(1, 0.15)
-    
-    # produce plot:
-    layout(mat = laymat, widths = widths, heights = heights)
-    
-    # x-axis label:
-    par(mar = mar * c(0, 1, 0, 1))
-    plot(c(0, 1), c(0, 1), col = NA, xlab = "", ylab = "", axes = FALSE)
-    # text(0.5, 0.5, xlab, cex = 1.5 * cex.lab)
-    mtext(xlab, side = 3, line = -2, cex = cex.lab)
-    legend('right', c("Life table", "CIs"), col = cols, pch = c(NA, 15), 
-           lwd = c(lwd, NA), pt.cex = c(NA, 2), bty = "n", cex = cex.legend)
-    
-    par(mar = mar) 
-    agev <- x[[dr]][, "Ages"]
-    nage <- length(agev)
-    if ("xlim" %in% names(args)) {
-      xlim <- args$xlim
-    } else {
-      xlim <- range(agev) * c(0, 1.1)
-    }
-    ydr <- x[[dr]][, -1]
-    if ("ylim" %in% names(args)) {
-      ylim <- args$ylim
-    } else {
-      if (dr != "ex") {
-        ylim <- c(0, 1)
-      } else {
-        ylim <- c(0, max(ydr))
-      }
-    }
-    if (dr == "lx") {
-      type <- "s"
-    } else {
-      type <- "l"
-    }
-    plot(xlim, ylim, col = NA, axes = FALSE, xlab = "", ylab = "")
-    if (dr == "lx") {
-      for (ii in 1:nage) {
-        xp <- agev[ii] + c(0, 1)
-        yp <- ydr[ii, c("Lower", "Upper")]
-        polygon(xp[c(1, 2, 2, 1)], yp[c(1, 1, 2, 2)], col = cols["cis"], 
-                border = NA)
-      }
-    } else {
-      xp <- agev
-      yp <- ydr[, c("Lower", "Upper")]
-      polygon(c(xp, rev(xp)), c(yp[, 1], rev(yp[, 2])), col = cols["cis"], 
-              border = NA)
-    }
-    lines(agev, ydr[, dr], type = type, col = cols["mean"], lwd = lwd)
-    Axis(xlim + c(0, 10), side = 1, pos = ylim[1], cex.axis = cex.axis)
-    Axis(ylim, side = 2, pos = xlim[1], las = 2, cex.axis = cex.axis)
-    mtext(ylab, side = 2, line = mar[2] / 2, cex = cex.lab)
-  }
-  par(op)
-  
-}
-
 # ------------------------ #
 # PRODUCT-LIMIT ESTIMATOR: 
 # ------------------------ #
 # Simple Product-limit estimator function:
-CalcProductLimitEst <- function(ageLast, ageFirst = NULL, departType) {
+CalcProductLimitEst <- function(ageLast, ageFirst = NULL, departType,
+                                calcCIs = FALSE, nboot = 1000, alpha = 0.05) {
   # Error handling:
   if (missing(ageLast)) {
     stop("Argument 'ageLast' missing. 
@@ -2310,102 +2146,56 @@ CalcProductLimitEst <- function(ageLast, ageFirst = NULL, departType) {
   ageLast[idsame] <- ageLast[idsame] + 1/365.25
   
   # Product limit estimator:
-  idsort <- sort.int(ageLast, index.return = TRUE)$ix
-  agev <- unique(ageLast[idsort])
-  nage <- length(agev)
-  Cx <- rep(0, nage)
-  delx <- rep(0, nage)
-  for (ii in 1:nage) {
-    idNx <- which(ageFirst <= agev[ii] & ageLast >= agev[ii])
-    Cx[ii] <- length(idNx) / nage
-    if (departType[idsort[ii]] == "D") delx[ii] <- 1
-  }
-  ple <- cumprod((1 - 1 / (nage * Cx))^delx)
+  pleTab <- .CalcPLE(ageLast = ageLast, ageFirst = ageFirst,
+                     departType = departType)
   
-  # Add age 0:
-  if (agev[1] > 0) {
-    agev <- c(0, agev)
-    ple <- c(1, ple)
+  # Confidence intervals:
+  if (calcCIs) {
+    # Number of individual ages:
+    nple <- length(pleTab$Ages)
+    pleAges <- pleTab$Ages
+    
+    # ==================== #
+    # ==== BOOTSTRAP: ====
+    # ==================== #
+    bootTab <- matrix(NA, nple, nboot)
+    for (iboot in 1:nboot) {
+      idboot <- sample(1:n, size = n, replace = TRUE)
+      ageLastb <- ageLast[idboot]
+      ageFirstb <- ageFirst[idboot]
+      departTypeb <- departType[idboot]
+      
+      pleBooti <- .CalcPLE(ageLast = ageLastb, ageFirst = ageFirstb,
+                           departType = departTypeb)
+      
+      idages <- which(pleAges %in% pleBooti$Ages)
+      bootTab[idages, iboot] <- pleBooti$ple
+      idna <- which(is.na(bootTab[, iboot]))
+      nna <- length(idna)
+      while(nna > 0) {
+        bootTab[idna, iboot] <- bootTab[idna - 1, iboot]
+        idna <- which(is.na(bootTab[, iboot]))
+        nna <- length(idna)
+        
+      }
+    }
+    
+    # Calculate CIs:  # Calculate CIs:
+    pleci <- t(apply(bootTab, 1, quantile, c(alpha / 2, 1 - alpha / 2),
+                     na.rm = TRUE))
+    colnames(pleci) <- c("Lower", "Upper")
+    
+    # Final data frame:
+    pleTab <- data.frame(pleTab, pleci)
   }
-  
-  pleTab <- data.frame(Ages = agev, ple = ple)
   
   class(pleTab) <- c("paramDemoPLE", "data.frame")
   return(pleTab)
 }
 
-# Product-limit estimator CIs:
-CalcProductLimitEstCIs <- function(ageLast, ageFirst = NULL, departType, 
-                                   nboot = 1000, alpha = 0.05) {
-  # Error handling:
-  if (missing(ageLast)) {
-    stop("Argument 'ageLast' missing. 
-         Provide vector of ages at last observation.")
-  }
-  
-  # Number of records:
-  n <- length(ageLast)
-  
-  # Set age first to 0 if NULL:
-  if (is.null(ageFirst)) {
-    ageFirst <- rep(0, n)
-  }
-  
-  if (missing(departType)) {
-    stop("Argument 'departType' missing. 
-         Provide character vector of departure types (i.e., 'D' and 'C')")
-  }
-  
-  if (n != length(departType)) {
-    stop("Lengths of 'ageLast' and 'departType' differ.")
-  } else if (n != length(ageFirst)) {
-    stop("Lengths of 'ageLast' and 'ageFirst' differ.")
-  }
-  
-  # =================== #
-  # ==== NON-BOOT: ====
-  # =================== #
-  pleNoBoot <- CalcProductLimitEst(ageLast = ageLast, ageFirst = ageFirst,
-                                   departType = departType)
-
-  # Number of individual ages:
-  nple <- length(pleNoBoot$Ages)
-  pleAges <- pleNoBoot$Ages
-  
-  # ==================== #
-  # ==== BOOTSTRAP: ====
-  # ==================== #
-  bootTab <- matrix(NA, nple, nboot)
-  for (iboot in 1:nboot) {
-    idboot <- sample(1:n, size = n, replace = TRUE)
-    ageLastb <- ageLast[idboot]
-    ageFirstb <- ageFirst[idboot]
-    departTypeb <- departType[idboot]
-    
-    pleBooti <- CalcProductLimitEst(ageLast = ageLastb, ageFirst = ageFirstb,
-                                    departType = departTypeb)
-    
-    idages <- which(pleAges %in% pleBooti$Ages)
-    bootTab[idages, iboot] <- pleBooti$ple
-    idna <- which(is.na(bootTab[, iboot]))
-    bootTab[idna, iboot] <- pleBooti$ple[idna-1]
-  }
-  
-  # Calculate CIs:  # Calculate CIs:
-  pleci <- t(apply(bootTab, 1, quantile, c(alpha / 2, 1 - alpha / 2),
-                   na.rm = TRUE))
-  colnames(pleci) <- c("Lower", "Upper")
-  
-  # Final data frame:
-  pleboot <- data.frame(pleNoBoot, pleci)
-  
-  # Assign class:
-  class(pleboot) <- c("paramDemoPLECIs", "data.frame")
-  return(pleboot)
-}
 
 # Plot Product-limit estimator:
-plot.paramDemoPLE <- function(x, ...) {
+plot.paramDemoPLE <- function(x, inclCIs = FALSE, ...) {
   # Additional arguments:
   args <- list(...)
   
@@ -2485,118 +2275,20 @@ plot.paramDemoPLE <- function(x, ...) {
     ylim <- c(0, 1)
   }
   
+  # Logical in case CIs were calculated:
+  CIsCalc <- ifelse ("Lower" %in% colnames(x), TRUE, FALSE)
+  
   # Produce plots:
   op <- par(no.readonly = TRUE)
   
   par(mar = c(4, 4, 1, 1), mfrow = c(1, 1))
   plot(xlim, ylim, col = NA, axes = FALSE, xlab = "", ylab = "")
-  
-  lines(agev, x$ple, type = type, col = col, lwd = lwd)
-  Axis(xlim, side = 1, pos = ylim[1], cex.axis = cex.axis)
-  Axis(ylim, side = 2, pos = xlim[1], las = 2, cex.axis = cex.axis)
-  mtext(ylab, side = 2, line = mar[2] / 2, cex = cex.lab)
-  mtext(xlab, side = 1, line = 2, cex = cex.lab)
-  par(op)
-}
-
-# Plot Product-limit estimator CIs:
-plot.paramDemoPLECIs <- function(x, ...) {
-  # Additional arguments:
-  args <- list(...)
-  
-  # Vector of ages:
-  agev <- x$Ages
-  nage <- length(agev)
-  
-  # mar values:
-  if ("mar" %in% names(args)) {
-    mar <- args$mar
-  } else {
-    mar <- c(2, 4, 1, 1)
-  }
-  
-  # Colors:
-  if ("col" %in% names(args)) {
-    if (length(args$col) < 2) {
-      cols <- c(mean = "#800026", cis = "#FC4E2A")
-    } else {
-      cols <- args$col[1:2]
-      names(cols) <- c("mean", "cis")
+  if (inclCIs & CIsCalc) {
+    for (ici in c("Lower", "Upper")) {
+      lines(agev, x[[ici]], type = type, col = col, lwd = lwd, lty = 2)
     }
-  } else {
-    cols <- c(mean = "#800026", cis = "#FC4E2A")
   }
-  
-  # Axis labels:
-  if ("xlab" %in% names(args)) {
-    xlab <- args$xlab
-  } else {
-    xlab <- expression(paste("Age, ", italic(x)))
-  }
-  if ("ylab" %in% names(args)) {
-    ylab <- args$ylab
-  } else {
-    ylab <- "Product-limit estimator"
-  }
-  
-  # Type of line:
-  if ("type" %in% names(args)) {
-    type <- args$type
-  } else {
-    type <- "l"
-  }
-  
-  # Color
-  if ("col" %in% names(args)) {
-    col <- args$col
-  } else {
-    col <- "#800026"
-  }
-  
-  # Line width:
-  if ("lwd" %in% names(args)) {
-    lwd <- args$lwd
-  } else {
-    lwd <- 1
-  }
-  
-  # Cex.lab:
-  if ("cex.lab" %in% names(args)) {
-    cex.lab <- args$cex.lab
-  } else {
-    cex.lab <- 1
-  }
-  
-  # Cex.axis:
-  if ("cex.axis" %in% names(args)) {
-    cex.axis <- args$cex.axis
-  } else {
-    cex.axis <- 1
-  }
-  
-  if ("xlim" %in% names(args)) {
-    xlim <- args$xlim
-  } else {
-    xlim <- range(agev) * c(0, 1.1)
-  }
-  if ("ylim" %in% names(args)) {
-    ylim <- args$ylim
-  } else {
-    ylim <- c(0, 1)
-  }
-  
-  # Produce plots:
-  op <- par(no.readonly = TRUE)
-  
-  par(mar = c(4, 4, 1, 1), mfrow = c(1, 1))
-  plot(xlim, ylim, col = NA, axes = FALSE, xlab = "", ylab = "")
-  
-  # polygon(c(agev, rev(agev)), c(x$Lower, rev(x$Upper)), col = cols["cis"], 
-  #         border = NA)
-  for (ici in c("Lower", "Upper")) {
-    lines(agev, x[[ici]], type = type, col = cols["cis"], lwd = lwd, lty = 2)
-  }
-  lines(agev, x$ple, type = type, col = cols["mean"], lwd = lwd)
+  lines(agev, x$ple, type = type, col = col, lwd = lwd)
   Axis(xlim, side = 1, pos = ylim[1], cex.axis = cex.axis)
   Axis(ylim, side = 2, pos = xlim[1], las = 2, cex.axis = cex.axis)
   mtext(ylab, side = 2, line = mar[2] / 2, cex = cex.lab)
