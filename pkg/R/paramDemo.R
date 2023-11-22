@@ -2343,7 +2343,7 @@ SimulateStudy <- function(n, theta, model, shape, studyStart, studySpan,
     } else {
       stStop <- TRUE
     }
-  } else if (class(studyStart) == "Date") {
+  } else if (inherits(studyStart, "Date")) {
     stStop <- FALSE
   } else {
     stStop <- TRUE
@@ -2362,7 +2362,7 @@ SimulateStudy <- function(n, theta, model, shape, studyStart, studySpan,
     } else {
       stStop <- TRUE
     }
-  } else if (class(birthStart) == "Date") {
+  } else if (inherits(birthStart, "Date")) {
     stStop <- FALSE
   } else {
     stStop <- TRUE
