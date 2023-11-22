@@ -6,10 +6,13 @@
 }
 
 \description{
- \code{CalcLifeTable} uses non-parametric methods to calculate life tables.
+ \code{CalcLifeTable} uses non-parametric methods to calculate life tables and confidence intervals.
 }
 
-\usage{CalcLifeTable(ageLast, ageFirst = NULL, departType, dx = 1)}
+\usage{
+CalcLifeTable(ageLast, ageFirst = NULL, departType, dx = 1, 
+                          calcCIs = FALSE, nboot = 1000, alpha = 0.05)
+}
 
 \arguments{
 	\item{ageLast }{Numerical vector with the ages at last detection (i.e., death and censoring) (see \code{details})}
@@ -20,19 +23,27 @@
 
 	\item{dx }{Age interval size, default set at 1 (see \code{details})}
 
+  \item{calcCIs }{Logical indicating whether confidence intervals should be calculated}
+  
+	\item{nboot }{Number of bootstrap iterations}
+
+	\item{alpha }{Alpha level. Default is 0.05 for 95\% CIs}
+
 }
 
 \details{
 
 \subsection{1) Data structure:}
 
-The function allows to construct life tables for data that includes the following types of records:
+\code{CalcLifeTable} allows to construct life tables for data that includes the following types of records:
 
-- \bold{Uncensored}: individuals with known ages at death;
+\itemize{ 
+\item\bold{Uncensored}: individuals with known ages at death;
 
-- \bold{right-censored}: individuals last seen alive;
+\item\bold{right-censored}: individuals last seen alive;
 
-- \bold{left-truncated}: individuals born before the start of the study and are truncated at the age of entry. 
+\item\bold{left-truncated}: individuals born before the start of the study and are truncated at the age of entry. 
+}
 
 The data required are the ages at last detection (i.e., \emph{uncensored} or \emph{right-censored}) passed through argument \dQuote{\code{ageLast}}, the type of departure via argument \dQuote{\code{departType}}, which takes two values, namely \dQuote{\code{D}} for death, and \dQuote{\code{C}} for censored (i.e., right-censored). 
 
@@ -78,13 +89,16 @@ L_x = l_x (1 - a_x q_x)
 \item \code{Tx}: The total number of individual years lived after age \eqn{x}, given by \eqn{T_x = \sum_{j = x}^{\infty} L_j \Delta x}
 
 \item \code{ex}: the remaining life expectancy at the beginning of each age interval, calculated as \eqn{e_x = T_x / l_x}.
-
 }
+
+\subsection{3) Calculating confidence intervals}
+If argument \dQuote{\code{calcCIs}} is set to \code{TRUE}, the function uses a non-parametric bootstrap by sampling with replacement the data. Argument \code{nboot} specifies the number of bootstrap steps, with default \code{nboot = 2000}. From each re-sampled dataset, it uses function \code{\link{CalcLifeTable}} to construct the corresponding life table and stores the values of $l_x$, $q_x$, $p_x$, and $e_x$ from each iteration. From these, it calculates quantiles at the given alpha level. 
+
 
 }
 
 \value{
-The function produces a life table of class \code{matrix} with the following columns:
+\code{CalcLifeTable} returns an object of class \dQuote{\code{paramDemoLT}} with output consisting of a list with the life table and, if indicated by the user, with the confidence interval information. The life table in matrix format includes the following columns:
 	\item{Ages }{Ages with increments given by \code{dx}}
 	
 	\item{Nx }{Number of individuals entering the interval, does not need to be an integer since it considers truncation}
@@ -102,6 +116,19 @@ The function produces a life table of class \code{matrix} with the following col
 	\item{Tx }{Number of individual years lived after age x}
 
 	\item{ex }{Remaining life expectancy at each age}
+	
+
+If argument \code{calcCIs = TRUE}, the function also returns a list containing the following components:
+
+	\item{lx }{Matrix with Ages and mean and upper and lower CIs for the life table survival}
+	
+	\item{qx }{Matrix with Ages and mean and upper and lower CIs for the age-specific mortality probability}
+	
+	\item{px }{Matrix with Ages and mean and upper and lower CIs for the age-specific survival probability}
+	
+	\item{ex }{Matrix with Ages and mean and upper and lower CIs for the remaining life expectancy}
+	
+	\item{Settings }{Numerical vector including whether CIs were calculated, the number of bootstrap iterations, \dQuote{\code{nboot}} and the alpha level \dQuote{\code{alpha}}}
 }
 
 \references{
@@ -127,6 +154,10 @@ ages <- SampleRandAge(n = 100, theta = c(b0 = -5, b1 = 0.1))
 
 # Calculate life table:
 lt <- CalcLifeTable(ageLast = ages, departType = rep("D", 100))
+
+# Calculate life table with 95\% CIs:
+ltCIs <- CalcLifeTable(ageLast = ages, departType = rep("D", 100), 
+                       calcCIs = TRUE, nboot = 100)
 
 }
 

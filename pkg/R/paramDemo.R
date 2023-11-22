@@ -671,6 +671,95 @@
   return(fertfun)
 }
 
+# ------------------------ #
+# NON-PARAMETRIC SURVIVAL:
+# ------------------------ #
+# Life table:
+.CalcLT <- function(ageLast, ageFirst, departType, dx) {
+  # Unit age vector for that sex:
+  agev <- seq(from = 0, to = ceiling(max(ageLast[which(departType == "D")])), 
+              by = dx)
+  nage <- length(agev)
+  
+  # Outputs:
+  Nx <- Dx <- ax <- rep(0, nage)
+  for (ix in 1:nage) {
+    # A) EXPOSURES:
+    # Find how many entered the interval (including truncated):
+    idNx <- which(ageFirst < agev[ix] + dx & ageLast >= agev[ix])
+    nNx <- length(idNx)
+    
+    # Extract ages and departType:
+    xFirst <- ageFirst[idNx]
+    xLast <- ageLast[idNx]
+    dType <- departType[idNx]
+    
+    # Index for individuals dying within interval:
+    idDx <- which(xLast < agev[ix] + dx & dType == "D")
+    nDx <- length(idDx)
+    
+    # Index of truncated in interval:
+    idtr <- which(xFirst >= agev[ix])
+    
+    # Index of censored in the interval:
+    idce <- which(xLast < agev[ix] + dx & dType == "C")
+    
+    # Porportion lived within interval:
+    intr <- rep(0, nNx)
+    ince <- rep(dx, nNx)
+    intr[idtr] <- xFirst[idtr] - agev[ix]
+    ince[idce] <- xLast[idce] - agev[ix]
+    lived <- (ince - intr) / dx
+    
+    # Fill in Nx:
+    Nx[ix] <- sum(lived)
+    
+    # B) DEATHS:
+    # Fill in Dx:
+    Dx[ix] <- nDx
+    
+    
+    # C) PROPORTION LIVED BY THOSE THAT DIED IN INTERVAL:
+    if (Dx[ix] > 1) {
+      ylived <- xLast[idDx] - agev[ix]
+      ax[ix] <- sum(ylived) / dx / nDx
+    } else {
+      ax[ix] <- 0
+    }
+  }
+  
+  # Age-specific mortality probability:
+  qx <- Dx / Nx
+  qx[which(is.na(qx))] <- 0
+  
+  # Age-specific survival probability:
+  px <- 1 - qx
+  
+  # Survivorship (or cumulative survival):
+  lx <- c(1, cumprod(px))[1:nage]
+  
+  # Number of individual years lived within the interval:
+  Lx <- lx * (1 - ax * qx)
+  # Note: correction on the calculation of Lx (doesn't work when
+  #       there are censored and truncated records)
+  # Lx <- Nx - Dx * ax
+  Lx[is.na(Lx)] <- 0
+  
+  # Total number of individual years lived after age x:
+  Tx <- rev(cumsum(rev(Lx))) * dx
+  
+  # Remaining life expectancy after age x:
+  ex <- Tx / lx 
+  ex[which(is.na(ex))] <- 0
+  
+  # Life-table:
+  lt <- cbind(Ages = agev, Nx = Nx, Dx = Dx, lx = lx, px = px,
+              qx = qx, Lx = Lx, Tx = Tx, ex = ex)
+  return(lt)
+}
+
+# Product limit estimator:
+
 # ------------- #
 # AGEING RATES:
 # ------------- #
@@ -1681,7 +1770,9 @@ CalcAveDemo <- function(demo) {
 # LIFE TABLE FUNCTIONS: 
 # --------------------- #
 # Calculate life table:
-CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
+# Calculate life table:
+CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1, 
+                          calcCIs = FALSE, nboot = 1000, alpha = 0.05) {
   # Error handling:
   if (missing(ageLast)) {
     stop("Argument 'ageLast' missing. 
@@ -1707,169 +1798,64 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1) {
     stop("Lengths of 'ageLast' and 'ageFirst' differ.")
   }
   
-  # Unit age vector for that sex:
-  agev <- seq(from = 0, to = ceiling(max(ageLast[which(departType == "D")])), 
-              by = dx)
-  nage <- length(agev)
+  # Produce life table:
+  ltMean <- .CalcLT(ageLast = ageLast, ageFirst = ageFirst, 
+                    departType = departType, dx = dx)
   
-  # Outputs:
-  Nx <- Dx <- ax <- rep(0, nage)
-  for (ix in 1:nage) {
-    # A) EXPOSURES:
-    # Find how many entered the interval (including truncated):
-    idNx <- which(ageFirst < agev[ix] + dx & ageLast >= agev[ix])
-    nNx <- length(idNx)
-    
-    # Extract ages and departType:
-    xFirst <- ageFirst[idNx]
-    xLast <- ageLast[idNx]
-    dType <- departType[idNx]
-    
-    # Index for individuals dying within interval:
-    idDx <- which(xLast < agev[ix] + dx & dType == "D")
-    nDx <- length(idDx)
-    
-    # Index of truncated in interval:
-    idtr <- which(xFirst >= agev[ix])
-    
-    # Index of censored in the interval:
-    idce <- which(xLast < agev[ix] + dx & dType == "C")
-    
-    # Porportion lived within interval:
-    intr <- rep(0, nNx)
-    ince <- rep(dx, nNx)
-    intr[idtr] <- xFirst[idtr] - agev[ix]
-    ince[idce] <- xLast[idce] - agev[ix]
-    lived <- (ince - intr) / dx
-    
-    # Fill in Nx:
-    Nx[ix] <- sum(lived)
-    
-    # B) DEATHS:
-    # Fill in Dx:
-    # Dx[ix] <- sum(lived[idDx])
-    Dx[ix] <- nDx
-    
-    
-    # C) PROPORTION LIVED BY THOSE THAT DIED IN INTERVAL:
-    if (Dx[ix] > 1) {
-      ylived <- xLast[idDx] - agev[ix]
-      # ax[ix] <- sum(ylived) / Dx[ix]
-      ax[ix] <- sum(ylived) / dx / nDx
-    } else {
-      ax[ix] <- 0
-    }
+  # Check for negative survivals:
+  if (any(ltMean[, "lx"] < 0)) {
+    warning("Negative survivals produced due to excess truncation in some age intervals.
+            Consider better using function 'CalcProductLimitEst'")
   }
   
-  # Age-specific mortality probability:
-  qx <- Dx / Nx
-  qx[which(is.na(qx))] <- 0
-  
-  # Age-specific survival probability:
-  px <- 1 - qx
-  
-  # Survivorship (or cumulative survival):
-  lx <- c(1, cumprod(px))[1:nage]
-  # lx <- Nx / n
-  
-  # Number of individual years lived within the interval:
-  Lx <- lx * (1 - ax * qx)
-  # Note: correction on the calculation of Lx (doesn't work when
-  #       there are censored and truncated records)
-  # Lx <- Nx - Dx * ax
-  Lx[is.na(Lx)] <- 0
-  
-  # Total number of individual years lived after age x:
-  Tx <- rev(cumsum(rev(Lx))) * dx
-  
-  # Remaining life expectancy after age x:
-  ex <- Tx / lx 
-  ex[which(is.na(ex))] <- 0
-  
-  # Life-table:
-  lt <- cbind(Ages = agev, Nx = Nx, Dx = Dx, lx = lx, px = px,
-              qx = qx, Lx = Lx, Tx = Tx, ex = ex)
+  if (calcCIs) {
+    # Number of ages:
+    nage <- nrow(ltMean)
+    
+    # Labels for demographic rates:
+    demRates <- c("lx", "qx", "px", "ex")
+    
+    # Output bootstrap array
+    bootarr <- array(0, dim = c(nage, nboot, 4), 
+                     dimnames = list(NULL, NULL, demRates))
+    
+    # Run bootstrap:
+    for (iboot in 1:nboot) {
+      idboot <- sample(1:n, size = n, replace = TRUE)
+      ageLastBoot <- ageLast[idboot]
+      ageFirstBoot <- ageFirst[idboot]
+      departTypeBoot <- departType[idboot]
+      ltb <- .CalcLT(ageLast = ageLastBoot, ageFirst = ageFirstBoot, 
+                     departType = departTypeBoot, dx = dx)
+      nl <- nrow(ltb)
+      for (dr in demRates) {
+        bootarr[1:nl, iboot, dr] <- ltb[, dr]
+      }
+    }
+    
+    # Calculate CIs:
+    ltcis <- sapply(demRates, function(dr) {
+      cii <- t(apply(bootarr[, , dr], 1, quantile, c(alpha / 2, 1 - alpha / 2),
+                     na.rm = TRUE))
+      colnames(cii) <- c("Lower", "Upper")
+      return(cii)
+    }, simplify = FALSE, USE.NAMES = TRUE)
+    
+    # Merge with mean life table:
+    for (dr in demRates) {
+      ltcis[[dr]] <- cbind(ltMean[, c("Ages", dr)], ltcis[[dr]])
+    }
+    
+    # Settings:
+    ltcis$Settings <- c(calc = 1, nboot = nboot, alpha = alpha)
+    
+  } else {
+    ltcis <- list(lx = NA, qx = NA, px = NA, ex = NA, 
+                  Settings = c(calc = 0, nboot = NA, alpha = NA))
+  }
+  lt <- list(lt = ltMean, CIs = ltcis)
   class(lt) <- c("paramDemoLT")
   return(lt)
-}
-
-# Calculation of life table CIs:
-CalcLifeTableCIs <- function(ageLast, ageFirst = NULL, departType, 
-                             nboot = 2000, alpha = 0.05, dx = 1) {
-  # Error handling:
-  if (missing(ageLast)) {
-    stop("Argument 'ageLast' missing. 
-         Provide vector of ages at last observation.")
-  }
-  
-  # Number of records:
-  n <- length(ageLast)
-  
-  # Set age first to 0 if NULL:
-  if (is.null(ageFirst)) {
-    ageFirst <- rep(0, n)
-  }
-  
-  if (missing(departType)) {
-    stop("Argument 'departType' missing. 
-         Provide character vector of departure types (i.e., 'D' and 'C')")
-  }
-  
-  if (n != length(departType)) {
-    stop("Lengths of 'ageLast' and 'departType' differ.")
-  } else if (n != length(ageFirst)) {
-    stop("Lengths of 'ageLast' and 'ageFirst' differ.")
-  }
-  
-  # Unit age vector for that sex:
-  agev <- seq(from = 0, to = ceiling(max(ageLast[which(departType == "D")])), 
-              by = dx)
-  nage <- length(agev)
-  
-  # Mean life table:
-  ltMean <- CalcLifeTable(ageLast = ageLast, ageFirst = ageFirst, 
-                          departType = departType, dx = dx)
-  
-  # Labels for demographic rates:
-  demRates <- c("lx", "qx", "px", "ex")
-  
-  # Output bootstrap array
-  bootarr <- array(0, dim = c(nage, nboot, 4), 
-                   dimnames = list(NULL, NULL, demRates))
-  
-  # Run bootstrap:
-  for (iboot in 1:nboot) {
-    idboot <- sample(1:n, size = n, replace = TRUE)
-    ageLastBoot <- ageLast[idboot]
-    ageFirstBoot <- ageFirst[idboot]
-    departTypeBoot <- departType[idboot]
-    ltb <- CalcLifeTable(ageLast = ageLastBoot, ageFirst = ageFirstBoot, 
-                         departType = departTypeBoot, dx = dx)
-    nl <- nrow(ltb)
-    for (dr in demRates) {
-      bootarr[1:nl, iboot, dr] <- ltb[, dr]
-    }
-  }
-  
-  # Calculate CIs:
-  ltcis <- sapply(demRates, function(dr) {
-    cii <- t(apply(bootarr[, , dr], 1, quantile, c(alpha / 2, 1 - alpha / 2),
-            na.rm = TRUE))
-    colnames(cii) <- c("Lower", "Upper")
-    return(cii)
-  }, simplify = FALSE, USE.NAMES = TRUE)
-  
-  # Merge with mean life table:
-  for (dr in demRates) {
-    ltcis[[dr]] <- cbind(ltMean[, c("Ages", dr)], ltcis[[dr]])
-  }
-  
-  # Settings:
-  ltcis$Settings <- c(nboot = nboot, alpha = alpha)
-  
-  # class:
-  class(ltcis) <- "paramDemoLTCIs"
-  return(ltcis)
 }
 
 # Plot lifetable:
@@ -2325,7 +2311,7 @@ CalcProductLimitEst <- function(ageLast, ageFirst = NULL, departType) {
   
   # Product limit estimator:
   idsort <- sort.int(ageLast, index.return = TRUE)$ix
-  agev <- ageLast[idsort]
+  agev <- unique(ageLast[idsort])
   nage <- length(agev)
   Cx <- rep(0, nage)
   delx <- rep(0, nage)
@@ -2344,132 +2330,65 @@ CalcProductLimitEst <- function(ageLast, ageFirst = NULL, departType) {
   
   pleTab <- data.frame(Ages = agev, ple = ple)
   
-  class(pleTab) <- c("paramDemoPLE")
+  class(pleTab) <- c("paramDemoPLE", "data.frame")
   return(pleTab)
 }
 
 # Product-limit estimator CIs:
-CalcProductLimitEstCIs <- function(ageFirst, ageLast, departType, nboot = 1000,
-                                 alpha = 0.05) {
+CalcProductLimitEstCIs <- function(ageLast, ageFirst = NULL, departType, 
+                                   nboot = 1000, alpha = 0.05) {
+  # Error handling:
+  if (missing(ageLast)) {
+    stop("Argument 'ageLast' missing. 
+         Provide vector of ages at last observation.")
+  }
+  
+  # Number of records:
+  n <- length(ageLast)
+  
+  # Set age first to 0 if NULL:
+  if (is.null(ageFirst)) {
+    ageFirst <- rep(0, n)
+  }
+  
+  if (missing(departType)) {
+    stop("Argument 'departType' missing. 
+         Provide character vector of departure types (i.e., 'D' and 'C')")
+  }
+  
+  if (n != length(departType)) {
+    stop("Lengths of 'ageLast' and 'departType' differ.")
+  } else if (n != length(ageFirst)) {
+    stop("Lengths of 'ageLast' and 'ageFirst' differ.")
+  }
+  
   # =================== #
   # ==== NON-BOOT: ====
   # =================== #
-  # Number of individuals in dataset:
-  n <- length(ageLast)
-  
-  # Find records with same first and last age:
-  idsame <- which(ageLast == ageFirst)
-  
-  # Increase last age by one day:
-  ageLast[idsame] <- ageLast[idsame] + 1/365.25
-  
-  # create identities and age list:
-  if (is.null(ageFirst)) {
-    allAges <- sort(ageLast)
-    allAgesId <- departType
-  } else {
-    idAgeFirst <- which(ageFirst > min(ageLast))
-    allAges <- c(ageFirst[idAgeFirst], ageLast)
-    allAgesId <- c(rep("F", length(idAgeFirst)), departType)
-  }
-  
-  allAgeTypes <- c("D", "C", "F")
-  NallTypes <- length(allAgeTypes)
-  ageTypes <- unique(allAgesId)
-  ntypes <- length(ageTypes)
-  idsort <- sort.int(allAges, index.return = TRUE)$ix
-  allAges <- allAges[idsort]
-  allAgesId <- allAgesId[idsort]
-  nAllAges <- length(allAges)
-  unAllAges <- unique(allAges)
-  nages <- length(unAllAges)
-  ageNames <- as.character(unAllAges)
-  
-  # Count by type:
-  recTab <- matrix(0, nages, NallTypes, dimnames = list(ageNames, allAgeTypes))
-  for (at in ageTypes) {
-    idtemp <- rep(0, nAllAges)
-    idEqAt <- which(allAgesId == at)
-    idtemp[idEqAt] <- 1
-    ttemp <- table(allAges, idtemp)
-    temp <- c(ttemp[, 2])
-    recTab[rownames(ttemp), at] <- temp
-  }
-  
-  # Cumulative tables:
-  cumTab <- recTab * 0
-  for (at in ageTypes) {
-    cumTab[, at] <- rev(cumsum(rev(recTab[, at])))
-  }
-  
-  Nx <- cumTab[, "D"] + cumTab[, "C"] - cumTab[, "F"]
-  Dx <- recTab[, "D"]
-  
-  idDead <- which(recTab[, "D"] > 0)
-  nDead <- length(idDead)
-  pleNB <- cumprod(1 - c(Dx / Nx)[idDead])
+  pleNoBoot <- CalcProductLimitEst(ageLast = ageLast, ageFirst = ageFirst,
+                                   departType = departType)
+
+  # Number of individual ages:
+  nple <- length(pleNoBoot$Ages)
+  pleAges <- pleNoBoot$Ages
   
   # ==================== #
   # ==== BOOTSTRAP: ====
   # ==================== #
-  bootTab <- matrix(0, nDead, nboot)
+  bootTab <- matrix(NA, nple, nboot)
   for (iboot in 1:nboot) {
     idboot <- sample(1:n, size = n, replace = TRUE)
     ageLastb <- ageLast[idboot]
     ageFirstb <- ageFirst[idboot]
     departTypeb <- departType[idboot]
     
-    # create identities and age list:
-    if (is.null(ageFirst)) {
-      allAgesb <- sort(ageLastb)
-      allAgesIdb <- departTypeb
-    } else {
-      idAgeFirstb <- which(ageFirstb > min(ageLastb))
-      allAgesb <- c(ageFirstb[idAgeFirstb], ageLastb)
-      allAgesIdb <- c(rep("F", length(idAgeFirstb)), departTypeb)
-    }
+    pleBooti <- CalcProductLimitEst(ageLast = ageLastb, ageFirst = ageFirstb,
+                                    departType = departTypeb)
     
-    unAllAgesb <- sort(unique(allAgesb))
-    nagesb <- length(unAllAgesb)
-    idmiss <- which(!unAllAges %in% unAllAgesb)
-    allAgesb <- c(allAgesb, unAllAges[idmiss])
-    allAgesIdb <- c(allAgesIdb, rep("N", length(idmiss)))
-    
-    ageTypesb <- unique(allAgesIdb)
-    ntypesb <- length(ageTypesb)
-    idsort <- sort.int(allAgesb, index.return = TRUE)$ix
-    allAgesb <- allAgesb[idsort]
-    allAgesIdb <- allAgesIdb[idsort]
-    nAllAgesb <- length(allAgesb)
-    
-    # ageNames <- sprintf("a%s", gsub("[[:space:]]", "0", 
-    #                                 format(1:nages, scientific = F)))
-    
-    # Count by type:
-    recTab <- matrix(0, nages, NallTypes, 
-                     dimnames = list(ageNames, allAgeTypes))
-    for (at in ageTypes) {
-      idtemp <- rep(0, nAllAges)
-      idEqAt <- which(allAgesId == at)
-      idtemp[idEqAt] <- 1
-      ttemp <- table(allAges, idtemp)
-      temp <- c(ttemp[, 2])
-      recTab[rownames(ttemp), at] <- temp
-    }
-    
-    # Cumulative tables:
-    cumTab <- recTab * 0
-    for (at in ageTypes) {
-      cumTab[, at] <- rev(cumsum(rev(recTab[, at])))
-    }
-    
-    Nx <- cumTab[, "D"] + cumTab[, "C"] - cumTab[, "F"]
-    Dx <- recTab[, "D"]
-    
-    indDeadb <- rep(0, nages)
-    indDeadb[which(recTab[, "D"] > 0)] <- 1
-    pleb <- cumprod(((1 - c(Dx / Nx))^indDeadb)[idDead])
-    bootTab[, iboot] <- pleb
+    idages <- which(pleAges %in% pleBooti$Ages)
+    bootTab[idages, iboot] <- pleBooti$ple
+    idna <- which(is.na(bootTab[, iboot]))
+    bootTab[idna, iboot] <- pleBooti$ple[idna-1]
   }
   
   # Calculate CIs:  # Calculate CIs:
@@ -2477,16 +2396,11 @@ CalcProductLimitEstCIs <- function(ageFirst, ageLast, departType, nboot = 1000,
                    na.rm = TRUE))
   colnames(pleci) <- c("Lower", "Upper")
   
-  # Add age 0:
-  Ages <- unAllAges[idDead]
-  if (Ages[1] > 0) {
-    Ages <- c(0, Ages)
-    pleNB <- c(1, pleNB)
-    pleci <- rbind(1, pleci)
-  }
+  # Final data frame:
+  pleboot <- data.frame(pleNoBoot, pleci)
   
-  pleboot <- data.frame(Ages = Ages, ple = pleNB, pleci)
-  class(pleboot) <- "paramDemoPLECIs"
+  # Assign class:
+  class(pleboot) <- c("paramDemoPLECIs", "data.frame")
   return(pleboot)
 }
 
