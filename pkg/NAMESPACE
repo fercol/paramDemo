@@ -1,13 +1,9 @@
 #Exports:
 export("CalcAgeingRateMort", "CalcAgeMaxFert", "CalcAveDemo", "CalcDemo", 
-       "CalcFert", "CalcLifeTable", "CalcLifeTableCIs", "CalcMort", 
+       "CalcFert", "CalcLifeTable", "CalcMort", 
        "CalcRemainLifeExp", "CalcSurv", "CalcSurvProbs", "plot.paramDemoLT", 
-       "plot.paramDemoLTCIs", "plot.paramDemo", "SampleRandAge", 
-       "CalcProductLimitEst", "CalcProductLimitEstCIs", 
-       "plot.paramDemoPLE", "plot.paramDemoPLECIs", "SimulateStudy",
-       ".DefineMortMatrix", ".DefineMortNumeric", ".DefineCumHazMatrix",
-       ".DefineCumHazNumeric", ".DefineFertilityMatrix", 
-       ".DefineFertilityNumeric")
+       "plot.paramDemo", "SampleRandAge", 
+       "CalcProductLimitEst", "plot.paramDemoPLE", "SimulateStudy")
 
 # Import package snowfall
 importFrom("grDevices", "adjustcolor", "rainbow")
@@ -20,8 +16,6 @@ importFrom("stats", "as.formula", "cor", "density", "dnorm",
 importFrom("utils", "packageDescription")
 
 #S3 methods:
-S3method("plot", "paramDemoLT")
-S3method("plot", "paramDemoLTCIs")
 S3method("plot", "paramDemo")
+S3method("plot", "paramDemoLT")
 S3method("plot", "paramDemoPLE")
-S3method("plot", "paramDemoPLECIs")

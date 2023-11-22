@@ -2,11 +2,11 @@
 \alias{CalcProductLimitEst}
 
 \title{
- FILL UP
+ Calculating the product limit estimator from Data.
 }
 
 \description{
- FILL UP
+ \code{CalcProductLimitEst} uses non-parametric methods to calculate the product limit estimator and confidence intervals.
 }
 
 \usage{CalcProductLimitEst (ageLast, ageFirst = NULL, departType)}
@@ -38,14 +38,32 @@ In addition, if there is \emph{left-truncation}, it takes the ages at entry to t
  }
 
 \value{
-	\item{fill up }{FILL UP}
+  \code{CalcProductLimitEst} returns an object of class \dQuote{\code{paramDemoPLE}} with consists of a data frame and, if indicated by the user, the confidence interval of the PLE. The data frame includes the following numerical columns:
+  
+	\item{Ages }{ages when individuals died}
+	
+	\item{ple }{product limit estimator}
+	
+	\item{Lower }{If indicated with argument \code{calcCIs}, the lower \eqn{\alpha / 2} confidence bound}
+	
+		\item{Lower }{If indicated with argument \code{calcCIs}, the upper \eqn{1 - \alpha / 2} confidence bound}
+
 }
 
-\author{Fernando Colchero \email{colchero@imada.sdu.dk}}
+\author{Fernando Colchero \email{fernando_colchero@eva.mpg.de}}
 
-\seealso{FILL UP}
+\seealso{
+\code{\link{CalcLifeTable}} to calculate life tables.
+}
 
-\examples{}
+\examples{
+# Simulate age at death data from Gompertz model:
+ages <- SampleRandAge(n = 100, theta = c(b0 = -5, b1 = 0.1))
+
+# Calculate life table:
+lt <- CalcLifeTable(ageLast = ages, departType = rep("D", 100))
+
+}
 
 \keyword{models}
 
