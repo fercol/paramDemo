@@ -139,8 +139,6 @@ Preston, S.H., Heuveline, P. and Guillot, M. (2001) Demography: Measuring and Mo
 
 \seealso{
 
-\code{\link{CalcLifeTableCIs}} to calculate life table demographic rates with confidence intervals.
-
 \code{\link{CalcProductLimitEst}} to calculate product limit estimators.
 
 \code{\link{CalcProductLimitEstCIs}} to calculate product limit estimators with confidence intervals.

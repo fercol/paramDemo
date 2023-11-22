@@ -5,11 +5,11 @@
 \docType{package}
 
 \title{
- FILL UP
+ Parametric and Non-Parametric Demographic Functions and Applications
 }
 
 \description{
- FILL UP
+ Functions for parametric and non-parametric calculations of survival, mortality and fertility
 }
 
 \details{
@@ -17,16 +17,11 @@
 	Package: \tab paramDemo \cr
 	Type: \tab Package\cr
 	Version: \tab 1.0.0\cr
-	Date: \tab 2022-02-08\cr
+	Date: \tab 2023-11-18\cr
 	License: \tab GNU General Public Licence\cr
 	LazyLoad: \tab yes\cr
 }
-
-FILL UP DETAILS 
+This package contains functions for calculations of parametric mortality, survival and fertility models, as well as non-parametric methods for life tables and product limit estimators.
 }
 
-\author{Fernando Colchero \email{colchero@imada.sdu.dk}}
-
-\references{
-FILL UP
-}
+\author{Fernando Colchero \email{fernando_colchero@eva.mpg.de}}

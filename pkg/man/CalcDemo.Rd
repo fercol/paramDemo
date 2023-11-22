@@ -223,14 +223,12 @@ G = 1 - \frac{1}{e_0} \int_0^{\infty} [l(x)]^2 dx
 CV = \frac{\sqrt{\sigma^2}}{e_0},
 }
 where \eqn{\sigma^2} is the variance in ages at death.
-
-}
-
-
 }
 
 \value{
-The output consist of two lists, one for survival and one for fertility. The survival list can be called as \code{object$surv} while the fertility list is in \code{object$fert}. Both include the following outputs: \item{functs }{data.frame including the follwing columns for survival: \code{age}, \code{mort} for the mortality function, \code{surv} for the survival, \code{pdf} for the probability density function of ages at death, and \code{cumhaz} for the cumulative hazards. For fertility it includes columns for \code{age} and \code{fert} for the age-specific fertility.} 
+\code{CalcDemo} returns an object of class \dQuote{\code{paramDemo}} with output consisting of two lists, one for survival and one for fertility. The survival list can be called as \code{object$surv} while the fertility list is in \code{object$fert}. Both include the following outputs:
+
+\item{functs }{data.frame including the follwing columns for survival: \code{age}, \code{mort} for the mortality function, \code{surv} for the survival, \code{pdf} for the probability density function of ages at death, and \code{cumhaz} for the cumulative hazards. For fertility it includes columns for \code{age} and \code{fert} for the age-specific fertility.} 
   
   \item{summStats }{list with elements: \code{calculated} indicating whether summary statistics were calculated, \code{ageingRates} with the resulting actuarial ageing rates, and \code{summStatsMort} with ages at which the survival function reaches different levels (default 0.5, 0.2, 0.05) (e.g., \code{AgeSx=0.5}), with the life expectancy \code{lifeExp}, \code{lifespIneq} for the lifespan inequality (see Demetrius 1974), \code{lifespEqual} with the lifespan equality as in Colchero \emph{et al.} (2021), \code{Gini} for the Gini coefficient, and \code{CoeffVar} for the coefficient of variation in the distribution of ages at death. For fertility, the list includes a logical \code{calculated} to indicate if summary statistics were calculated, and \code{summStatsFert} with the age at maximum fertility calculations (see \code{\link{CalcAgeMaxFert}}).} 
   

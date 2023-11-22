@@ -2,37 +2,43 @@
 \alias{plot.paramDemoLT}
 
 \title{
- FILL UP
+ Function to plot life tables
 }
 
 \description{
- FILL UP
+ Draw a plot of demographic rates from a life table produced with function \code{CalcLifeTable}
 }
 
-\usage{plot.paramDemoLT (x, demorate = "lx", ...)}
+\usage{plot.paramDemoLT (x, demorate = "lx", inclCIs = FALSE, ...)}
 
 \arguments{
-	\item{ x }{FILL UP}
+	\item{x }{Object of class \code{paramDemoLT} produced with function \code{CalcLifeTable}}
 
-	\item{demorate }{FILL UP}
+	\item{demorate }{Demographic rate to be plotted, choices are \dQuote{\code{lx}} for the survival, \dQuote{\code{px}} for the age-specific survival probability, \dQuote{\code{qx}} for the age-specific mortality probability, and \dQuote{\code{ex}} for the remaining life expectancy}
 
-	\item{... }{FILL UP}
+  \item{inclCIs }{Logical indicating whether confidence intervals should be ploted in case they were calculated with function \code{CalcLifeTable}}
+  
+	\item{... }{Additional arguments passed to function \code{plot}}
 
 }
 
-\details{
-FILL UP 
+
+\author{Fernando Colchero \email{fernando_colchero@eva.mpg.de}}
+
+\seealso{
+\code{\link{CalcLifeTable}} to calculate life tables.
 }
 
-\value{
-	\item{fill up }{FILL UP}
+\examples{
+# Simulate age at death data from Gompertz model:
+ages <- SampleRandAge(n = 100, theta = c(b0 = -5, b1 = 0.1))
+
+# Calculate life table:
+lt <- CalcLifeTable(ageLast = ages, departType = rep("D", 100))
+
+# Plot life table:
+plot(lt)
 }
-
-\author{Fernando Colchero \email{colchero@imada.sdu.dk}}
-
-\seealso{FILL UP}
-
-\examples{FILL UP}
 
 \keyword{FILL UP}
 
