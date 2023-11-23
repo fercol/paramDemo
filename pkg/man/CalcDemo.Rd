@@ -2,7 +2,7 @@
 \alias{CalcDemo}
 
 \title{
- Calculating Parametric Age-Specific Mortality, Survival, and Fertility.
+ Calculating Parametric Age-Specific Mortality, Survival, and Fertility
 }
 
 \description{
