@@ -1669,12 +1669,12 @@ CalcAgeMaxFert <- function(beta, modelFert = "quadratic", ageMatur = 0,
     ii <- 0
   } else if (modelFert %in% c("ColcheroMuller", "Hadwiger")) {
     if (modelFert == "ColcheroMuller") {
-      dfdx <- function(x0, beta) {
-        x0^3 + x0^2 * (2 - beta["b2"]) + x0 * (1 - 2 * beta["b2"]) +
+      dfdx <- function(x, beta) {
+        x^3 + x^2 * (2 - beta["b2"]) + x0 * (1 - 2 * beta["b2"]) +
           beta["b3"] / (2 * beta["b1"]) - beta["b2"]
       }
-      dfdx2 <- function(x0, beta) {
-        3 * x0^2 + 2 * x0 * (2 - beta["b2"]) + 1 - 2 * beta["b2"]
+      dfdx2 <- function(x, beta) {
+        3 * x^2 + 2 * x * (2 - beta["b2"]) + 1 - 2 * beta["b2"]
       }
     } else {
       dfdx <- function(x, beta) {
