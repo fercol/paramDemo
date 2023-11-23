@@ -165,7 +165,7 @@ Siler, W. A  (1979) competing-risk model for animal mortality. \emph{Ecology} 60
 mort <- CalcMort(theta = c(b0 = -5, b1 = 0.1), x = 10)
 
 # Siler age specific mortality:
-mort <- CalcMort(beta = c(a0 = -1, a1 = 1, c = 0.0001, 
+mort <- CalcMort(theta = c(a0 = -1, a1 = 1, c = 0.0001, 
                           b0 = -6, b1 = 0.15), x = 10,
                   model = "GO", shape = "bathtub")
 

@@ -9,7 +9,8 @@
  \code{CalcProductLimitEst} uses non-parametric methods to calculate the product limit estimator and confidence intervals.
 }
 
-\usage{CalcProductLimitEst (ageLast, ageFirst = NULL, departType)}
+\usage{CalcProductLimitEst(ageLast, ageFirst = NULL, departType,
+                     calcCIs = FALSE, nboot = 1000, alpha = 0.05)}
 
 \arguments{
 	\item{ageLast }{Numerical vector with the ages at last detection (i.e., death and censoring) (see \code{details})}
@@ -17,6 +18,12 @@
 	\item{ageFirst }{Numerical vector of ages at first detection (i.e., truncation). If \code{NULL} then all values are set to 0 (see \code{details}).}
 
 	\item{departType }{Character string vector for the type of departure (i.e., last detection), with values \dQuote{\code{D}} for death and \dQuote{\code{C}} for censoring (see \code{details}).}
+
+  \item{calcCIs }{Logical indicating whether confidence intervals should be calculated}
+  
+	\item{nboot }{Number of bootstrap iterations}
+
+	\item{alpha }{Alpha level. Default is 0.05 for 95\% CIs}
 
 }
 

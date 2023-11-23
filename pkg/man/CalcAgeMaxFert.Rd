@@ -41,7 +41,7 @@ or a numerical approximation. For details of the parametric models available see
 \seealso{
 \code{\link{CalcSurv}} to calculate age-specific survival, \code{\link{CalcMort}} to calculate age-specific mortality, \code{\link{CalcFert}} to calculate age-specific fertility.
 
-\code{\link{CalcAgeingRate}} to calculate ageing rates from parametric models of age-specific mortality. \code{\link{CalcRemainLifeExp}} to calculate remaining life expectancy from parametric models of age-specific mortality.
+\code{\link{CalcAgeingRateMort}} to calculate ageing rates from parametric models of age-specific mortality. \code{\link{CalcRemainLifeExp}} to calculate remaining life expectancy from parametric models of age-specific mortality.
 }
 
 \examples{
@@ -50,7 +50,7 @@ maxg <- CalcAgeMaxFert(beta = c(b0 = 0.5, b1 = 0.01, b2 = 10))
 
 # Calculate age at maximum fertility from gamma model:
 maxg <- CalcAgeMaxFert(beta = c(b0 = 13, b1 = 2, b2 = 0.15),
-                     modelFert = "gamma", shape = "bathtub")
+                     modelFert = "gamma")
 
 }
 

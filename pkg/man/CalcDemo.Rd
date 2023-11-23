@@ -144,7 +144,8 @@ Note that in this example the parameter names are specified directly, this is re
 
 If argument \code{checkTheta} is set to \code{TRUE}, then the vector of \code{theta} parameters is verified for consistency with the requirements of the model and shape selected. 
 
-\subsection{3) Age-specific fertility models:}
+%\subsection{3) Age-specific fertility models:}
+\bold{\emph{3) Age-specific fertility models:}}
 
 The age-specific fertility models correspond to the expected number of offspring produced by adults of a given age. Therefore, for a random variable \eqn{Y_{x}} with realizations \eqn{y_x} for the number of offspring produced by adults of age \eqn{x}, we have that \eqn{E(Y_x) = g(x | \bm{\beta})}, where \eqn{g: \mathbb{R}_{\ge 0} \rightarrow \mathbb{R}_{\ge 0}} is a non-negative smooth fertility function and \eqn{\bm{\beta}} is a vector of parameters to be estimated. The functional forms of function \eqn{g} fall in two main categories, namely polynomial and distributional models.
 
@@ -288,7 +289,7 @@ Siler, W. A  (1979) competing-risk model for animal mortality. \emph{Ecology} 60
 \seealso{
 \code{\link{CalcSurv}} to calculate age-specific survival, \code{\link{CalcMort}} to calculate age-specific mortality, \code{\link{CalcFert}} to calculate age-specific fertility.
 
-\code{\link{CalcAgeingRate}} to calculate ageing rates from parametric models of age-specific mortality. \code{\link{CalcRemainLifeExp}} to calculate remaining life expectancy from parametric models of age-specific mortality. \code{\link{CalcAgeMaxFert}} to calculate the age at maximum fertility from parametric models of age-specific fertility.
+\code{\link{CalcAgeingRateMort}} to calculate ageing rates from parametric models of age-specific mortality. \code{\link{CalcRemainLifeExp}} to calculate remaining life expectancy from parametric models of age-specific mortality. \code{\link{CalcAgeMaxFert}} to calculate the age at maximum fertility from parametric models of age-specific fertility.
 }
 
 

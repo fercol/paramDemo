@@ -141,9 +141,6 @@ Preston, S.H., Heuveline, P. and Guillot, M. (2001) Demography: Measuring and Mo
 
 \code{\link{CalcProductLimitEst}} to calculate product limit estimators.
 
-\code{\link{CalcProductLimitEstCIs}} to calculate product limit estimators with confidence intervals.
-
-
 }
 
 \examples{

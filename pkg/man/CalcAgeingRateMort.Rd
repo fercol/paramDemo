@@ -53,7 +53,7 @@ for \eqn{i = 1, 2, \dots, n}.
 
 \examples{
 # Calculate ageing rate from Gompertz model:
-arm <- CalcAgeingRateMor(theta = c(b0 = -5, b1 = 0.1), x = 10)
+arm <- CalcAgeingRateMort(theta = c(b0 = -5, b1 = 0.1), x = 10)
 
 # Calculate ageing rate from Siler model:
 arm <- CalcAgeingRateMort(theta = c(a0 = -1, a1 = 1, c = 0.0001, 

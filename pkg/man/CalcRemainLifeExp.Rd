@@ -61,15 +61,15 @@ for \eqn{i = 1, 2, \dots, n}.
 \seealso{
 \code{\link{CalcSurv}} to calculate age-specific survival, \code{\link{CalcMort}} to calculate age-specific mortality, \code{\link{CalcFert}} to calculate age-specific fertility.
 
-\code{\link{CalcAgeMaxFert}} to calculate the age at maximum fertility from parametric models of age-specific fertility. \code{\link{CalcAgeingRate}} to calculate ageing rates from parametric models of age-specific mortality.
+\code{\link{CalcAgeMaxFert}} to calculate the age at maximum fertility from parametric models of age-specific fertility. \code{\link{CalcAgeingRateMort}} to calculate ageing rates from parametric models of age-specific mortality.
 }
 
 \examples{
 # Calculate ageing rate from Gompertz model:
-rle <- CalcRemainingLifeExp(theta = c(b0 = -5, b1 = 0.1), x = 10)
+rle <- CalcRemainLifeExp(theta = c(b0 = -5, b1 = 0.1), x = 10)
 
 # Calculate ageing rate from Siler model:
-rle <- CalcRemainingLifeExp(theta = c(a0 = -1, a1 = 1, c = 0.0001, 
+rle <- CalcRemainLifeExp(theta = c(a0 = -1, a1 = 1, c = 0.0001, 
                           b0 = -6, b1 = 0.15), x = 10,
                      model = "GO", shape = "bathtub")
 

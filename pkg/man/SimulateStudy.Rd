@@ -9,7 +9,9 @@
  FILL UP
 }
 
-\usage{SimulateStudy (n, theta, model, shape, studyStart, studySpan, birthStart,  birthUncert = 0, dx = 1/365.25, provideSurv = TRUE, checkTheta = TRUE)}
+\usage{SimulateStudy (n, theta, model, shape, studyStart, 
+           studySpan, birthStart,  birthUncert = 0, dx = 1/365.25, 
+           provideSurv = TRUE, checkTheta = TRUE)}
 
 \arguments{
 	\item{ n }{FILL UP}
