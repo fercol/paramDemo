@@ -1741,15 +1741,18 @@ CalcAgeMaxFert <- function(beta, modelFert = "quadratic", ageMatur = 0,
 # ---------------------------------------- #
 # DISCRETE AGE OR STAGE DEMOGRAPHIC RATES:
 # ---------------------------------------- #
-# Age-specific survival probability:
-CalcSurvProbs <- function(demo, dx = 1) {
-  if (!class(demo)[2] %in%  c("demoSurv", "demoBoth")) {
+# Demographic rates in discrete age intervals:
+CalcDiscrDemo <- function(demo, dx = 1) {
+  if (!(inherits(demo, "demoSurv") | inherits(demo, "demoBoth"))) {
     stop("Object 'demo' should be of class 'demoSurv'.\nCreate object demo with function CalcDemo().", call. = FALSE)
   }
-  if (length(demo$age) == 1) {
+  if (length(demo$surv$functs$age) == 1) {
     stop("Age-specific probabilities cannot be calculated from a single age.\nIncrease the age vector on CalcDemo().", call. = FALSE)
-
+    
   }
+  # ---------------------------- #
+  # ---- Survival probabilities:
+  # ---------------------------- #
   x <- demo$surv$functs$age
   mux <- demo$surv$functs$mort
   cumh <- demo$surv$functs$cumhaz
@@ -1760,9 +1763,26 @@ CalcSurvProbs <- function(demo, dx = 1) {
   px <- Sx[idAges[-1]] / Sx[idAges[-nAges]]
   qx <- 1 - px
   lx <- Sx[idAges[-nAges]]
-  demoProbs <- cbind(age = xdis[-nAges], px, qx, lx)
-  class(demoProbs) <- "demoProbs"
-  return(demoProbs)
+  demoDiscr <- cbind(age = xdis[-nAges], lx, px, qx)
+  
+  # ---------- #
+  # Fertility:
+  # ---------- #
+  if (inherits(demo, "demoBoth")) {
+    idMidAges <- which(c(x %in% (xdis + dx / 2)))
+    if (length(idMidAges) == 0) {
+      idMidAges <- idAges * 0
+      for (ai in 1:nAges) {
+        xdmid <- xdis + dx / 2
+        idd <- which(abs(x - xdmid) == min(x - xdmid))
+        idMidAges[ai] <- idd
+      }
+    }
+    bx <- demo$fert$functs$fert[idMidAges[-nAges]] * dx
+    demoDiscr <- cbind(demoDiscr, bx = bx)
+  }
+  class(demoDiscr) <- c("discrDemo", "matrix")
+  return(demoDiscr)
 }
 
 # Extract average juvenile and adult vital rates:
