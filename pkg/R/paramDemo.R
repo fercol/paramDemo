@@ -1785,32 +1785,6 @@ CalcDiscrDemo <- function(demo, dx = 1) {
   return(demoDiscr)
 }
 
-# Extract average juvenile and adult vital rates:
-CalcAveDemo <- function(demo) {
-  
-  # Find life table probabilities
-  probs <- CalcSurvProbs(demo)
-  
-  # Find age at minimum mortality:
-  alpha <- floor(demo$surv$functs$age[which(demo$surv$functs$mort == 
-                                              min(demo$surv$functs$mort))])
-  
-  # Indices of adult and juvenile ages:
-  idjuv <- which(probs[, "age"] < alpha)
-  idad <- which(probs[, "age"] >= alpha)
-  
-  # Calculate average survival for juvs and ads:
-  pj <- sum(probs[idjuv, "px"] * probs[idjuv, "lx"]) /
-    sum(probs[idjuv, "lx"])
-  pa <- sum(probs[idad, "px"] * probs[idad, "lx"]) / sum(probs[idad, "lx"])
-  
-  # Vector of demographic variables:
-  palpha <- c(pj = pj, pa = pa, alpha = alpha)
-  
-  # return vector:
-  return(palpha)
-}
-
 # --------------------- #
 # LIFE TABLE FUNCTIONS: 
 # --------------------- #
