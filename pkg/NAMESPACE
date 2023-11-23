@@ -1,9 +1,9 @@
 #Exports:
-export("CalcAgeingRateMort", "CalcAgeMaxFert", "CalcAveDemo", "CalcDemo", 
+export("CalcAgeingRateMort", "CalcAgeMaxFert", "CalcDemo", 
        "CalcFert", "CalcLifeTable", "CalcMort", 
-       "CalcRemainLifeExp", "CalcSurv", "CalcSurvProbs", "plot.paramDemoLT", 
+       "CalcRemainLifeExp", "CalcSurv", "CalcDiscrDemo", "plot.paramDemoLT", 
        "plot.paramDemo", "SampleRandAge", 
-       "CalcProductLimitEst", "plot.paramDemoPLE", "SimulateStudy")
+       "CalcProductLimitEst", "plot.paramDemoPLE")
 
 # Import package snowfall
 importFrom("grDevices", "adjustcolor", "rainbow")
