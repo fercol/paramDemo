@@ -180,5 +180,5 @@ surv <- CalcSurv(theta = c(a0 = -1, a1 = 1, c = 0.0001,
 
 }
 
-\keyword{models}
+\keyword{distribution}
 

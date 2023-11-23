@@ -156,5 +156,5 @@ ltCIs <- CalcLifeTable(ageLast = ages, departType = rep("D", 100),
 
 }
 
-\keyword{models}
+\keyword{survival}
 
