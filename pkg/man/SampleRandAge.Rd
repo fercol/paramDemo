@@ -42,10 +42,6 @@ In most cases, this is acheived numerically and thus the lower the value for arg
 
 \author{Fernando Colchero \email{fernando_colchero@eva.mpg.de}}
 
-\seealso{
-\code{\link{SimulateStudy}} to simulate a hypothetical longevity dataset. 
-}
-
 \examples{
 # Simulate age at death data from Gompertz model:
 ages <- SampleRandAge(n = 100, theta = c(b0 = -5, b1 = 0.1))

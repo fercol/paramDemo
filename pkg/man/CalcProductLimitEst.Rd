@@ -28,7 +28,7 @@
 }
 
 \details{
-\subsection{1) Data structure:}
+\bold{1) Data structure:}
 
 The function allows to calculate product limit estimator (Wann \emph{et al.} 1987) for data that includes the following types of records:
 \itemize{ 

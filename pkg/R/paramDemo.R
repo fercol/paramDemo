@@ -1001,52 +1001,6 @@
   return(ceiling(xTest[idBound - 1]))
 }
 
-# --------------------------------------------- #
-# EXTRACT SILER PARAMETERS FROM SURVIVAL RATES: 
-# --------------------------------------------- #
-.FindSilerPars <- function(theta, palpha) {
-  theta[c(2, 3, 5)] <- abs(theta[c(2, 3, 5)])
-  
-  # Extract mortality, survival, etc:
-  demotest <- CalcDemo(theta = theta, shape = "bathtub", minSx = 0.00001, 
-                       type = "survival", summarStats = FALSE)
-  
-  # Vector of demographic variables:
-  paltest <- c(CalcAveDemo(demotest), omega = max(demotest$age))
-  
-  # max alpha:
-  alphaMax <- max(paltest[3], palpha[3])
-  
-  # Scale alpha's:
-  paltest[3] <- paltest[3] / alphaMax
-  palpha[3] <- palpha[3] / alphaMax
-  
-  # max maxAge:
-  omegaMax <- max(paltest[4], palpha[4])
-  
-  # Scale max age:
-  paltest[4] <- paltest[4] / omegaMax
-  palpha[4] <- palpha[4] / omegaMax
-  
-  # Difference between
-  diffpa <- palpha - paltest
-  
-  return(sum(diffpa^2))
-}
-
-# ---------------- #
-# RECURSIVE OPTIM:
-# ---------------- #
-.myoptim <- function(par, fn, ...) {
-  opt1 <- optim(par = par, fn = fn, ...)
-  ntry <- 0
-  while(opt1$convergence != 0 & ntry < 50) {
-    ntry <- ntry + 1
-    opt1 <- optim(par = opt1$par, fn = fn, ...)
-  }
-  return(opt1)
-}
-
 # ========================= #
 # ==== USER FUNCTIONS: ====
 # ========================= #

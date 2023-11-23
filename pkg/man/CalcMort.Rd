@@ -33,7 +33,7 @@ CalcSurv(theta, x, model = "GO", shape = "simple",
 
 \details{
 
-\subsection{1) Age-specific mortality and survival models:}
+\bold{1) Age-specific mortality and survival models:}
 
 The function \code{CalcMort} uses parametric functions to calculate age-specific survival, defined as the probability of surviving to a given age. The function follows the conventions from package BaSTA (Colchero and Clark 2012, Colchero \emph{et al.} 2012, Colchero \emph{et al.} 2021). The mortality function or hazard rate describes how the risk of mortality changes with age, and is defined as 
 \deqn{
@@ -125,7 +125,7 @@ The most widely use \dQuote{\code{bathtub}} shaped model is the \bold{Siler mort
 
 \preformatted{CalcMort(..., model = "GO", shape = "bathtub", ...)}
 
-\subsection{2) Specifying theta parameters:}
+\bold{2) Specifying theta parameters:}
 
 Argument \code{theta} requires a numerical vector of parameters. For instance, for a Gompertz model with simple shape and with parameter vector \eqn{\bm{\theta}^{\top} = [b_0, b_1]} where \eqn{b_0 = -5} and \eqn{b_1 = 0.1}, the argument should be specified as 
 
@@ -142,17 +142,17 @@ Colchero, F. and J.S. Clark (2012) Bayesian inference on age-specific survival f
 
 Colchero, F., O.R. Jones and M. Rebke. (2012) BaSTA: an R package for Bayesian estimation of age-specific survival from incomplete mark-recapture/recovery data with covariates. \emph{Method in Ecology and Evolution}. 3, 466-470. 
 
-Colchero, F., \emph{et al.}  (2021) The long lives of primates and the "invariant rate of aging" hypothesis. \emph{Nature Communications} 12:3666
+Colchero, F., \emph{et al.} (2021) The long lives of primates and the "invariant rate of aging" hypothesis. \emph{Nature Communications} 12:3666
 
 Cox, D. R., and Oakes D. (1984) \emph{Analysis of Survival Data}. Chapman and Hall, London.
 
 Gompertz, B. (1825) On the nature of the function expressive of the law of human mortality, and on a new mode of determining the value of life contingencies. \emph{Philosophical Transactions of the Royal Society of London}, 115, 513-583.
 
-Makeham, W. M. On the law of mortality (1866). \emph{Journal of the Institute of Actuaries} 13, 1–34.
+Makeham, W. M. On the law of mortality (1866). \emph{Journal of the Institute of Actuaries} 13, 1-34.
   
 Pinder III, J.E., Wiener, J.G. and Smith, M.H. (1978) The Weibull distribution: a new method of summarizing survivorship data. \emph{Ecology}, 59, 175-179.
 
-Siler, W. A  (1979) competing-risk model for animal mortality. \emph{Ecology} 60, 750–757.
+Siler, W. A (1979) competing-risk model for animal mortality. \emph{Ecology} 60, 750-757.
 
 }
 

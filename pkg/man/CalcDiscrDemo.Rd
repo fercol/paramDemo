@@ -69,7 +69,7 @@ dem <- CalcDemo(theta = c(b0 = -5, b1 = 0.1),
                  summarStats = TRUE, agesAR = c(5, 10))
 
 # Create discrete demographic object:
-demDisc <- CalcDemoDiscr(dem, dx = 1)
+demDisc <- CalcDiscrDemo(dem, dx = 1)
 
 }
 

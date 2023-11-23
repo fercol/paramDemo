@@ -33,7 +33,7 @@ CalcLifeTable(ageLast, ageFirst = NULL, departType, dx = 1,
 
 \details{
 
-\subsection{1) Data structure:}
+\bold{1) Data structure:}
 
 \code{CalcLifeTable} allows to construct life tables for data that includes the following types of records:
 
@@ -50,7 +50,7 @@ The data required are the ages at last detection (i.e., \emph{uncensored} or \em
 In addition, if there is \emph{left-truncation}, it takes the ages at entry to the study by means of argument \dQuote{\code{ageFirst}}. If all the individuals were born during the study, the value of \dQuote{\code{ageFirst}} can be left as \code{NULL}, which will make them all equal to 0. 
  
  
-\subsection{2) Computing life tables}
+\bold{2) Computing life tables}
 
 To calculate life tables, the function uses conventional formal demgraphic methods as depicted by Preston \emph{et al.} (2001). Argument \dQuote{\code{ageLast}} provides a vector of ages at last detection, \eqn{\bold{x}^{\top} = [x_1, x_2, \dots, x_n]}, while argument \dQuote{\code{ageFirst}} provides a vector of ages at first detection \eqn{\bold{y}^{\top} = [y_1, y_2, \dots, y_n]}. From argument \dQuote{\code{departType}} the function produces an indicator vector for censoring \eqn{\bold{v} = \{v_i\}_{i \in \mathbb{N}_n}} where \eqn{v_i = 1} if individual \eqn{i} is censored and 0 otherwise. 
 
@@ -91,7 +91,7 @@ L_x = l_x (1 - a_x q_x)
 \item \code{ex}: the remaining life expectancy at the beginning of each age interval, calculated as \eqn{e_x = T_x / l_x}.
 }
 
-\subsection{3) Calculating confidence intervals}
+\bold{3) Calculating confidence intervals}
 If argument \dQuote{\code{calcCIs}} is set to \code{TRUE}, the function uses a non-parametric bootstrap by sampling with replacement the data. Argument \code{nboot} specifies the number of bootstrap steps, with default \code{nboot = 2000}. From each re-sampled dataset, it uses function \code{\link{CalcLifeTable}} to construct the corresponding life table and stores the values of $l_x$, $q_x$, $p_x$, and $e_x$ from each iteration. From these, it calculates quantiles at the given alpha level. 
 
 
