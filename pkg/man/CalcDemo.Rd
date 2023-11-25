@@ -265,6 +265,8 @@ Hadwiger, H. (1940) Eine analytische Reproduktionssunktion fur biologische Gesam
 
 Hoem, J.M., Madien, D., Nielsen, J.L., Ohlsen, E.M., Hansen, H.O., Rennermalm, B. (1981) Experiments in modelling recent Danish fertility curves. \emph{Demography}, 18, 231-244.
 
+Keyfitz, N., Caswell, H. (2005) Applied Mathematical Demography. (Springer-Verlag).
+
 Makeham, W. M. (1866) On the law of mortality \emph{Journal of the Institute of Actuaries} 13, 1-34.
   
 Mazzuco, S., Scarpa, B. (2011) Fitting age-specific fertility rates by a skew- symmetric probability density function. (Working paper 10), University of Padua.
@@ -276,8 +278,6 @@ Muller M. N., Blurton Jones N. G, Colchero F., Thompson M. E., Enigk D. K. (2020
 Peristera P., Kostaki A. (2007) Modeling fertility in modern populations. \emph{Demographic Research}, 16, 141-194.
 
 Pinder III, J.E., Wiener, J.G. and Smith, M.H. (1978) The Weibull distribution: a new method of summarizing survivorship data. \emph{Ecology}, 59, 175-179.
-
-Makeham, W. M. On the law of mortality (1866). \emph{Journal of the Institute of Actuaries} 13, 1-34.
 
 Shkolnikov, V., Andreev, E., Begun, A. Z. (2003) Gini coefficient as a life table function. \emph{Demographic Research} 8, 305-358.
   
