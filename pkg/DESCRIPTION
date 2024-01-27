@@ -2,7 +2,7 @@ Package: paramDemo
 Type: Package
 Title: Parametric and Non-Parametric Demographic Functions and Applications
 Version: 1.0.0
-Date: 2023-11-18
+Date: 2024-01-27
 Author: Fernando Colchero
 Maintainer: Fernando Colchero <fernando_colchero@eva.mpg.de>
 Depends: R (>= 2.10)
