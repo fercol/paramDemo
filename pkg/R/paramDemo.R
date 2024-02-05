@@ -1001,6 +1001,20 @@
   return(ceiling(xTest[idBound - 1]))
 }
 
+# ---------------------------- #
+# TRANSITION MATRIX FUNCTIONS:
+# ---------------------------- #
+# Function to construct Leslie matrix:
+.FillLeslieMatr <- function(p, f, n) {
+  idcol <- 1:n
+  idrow <- c(2:n, n)
+  idpa <- (idcol - 1) * n + idrow
+  Aa <- matrix(0, n, n)
+  Aa[1, ] <- f
+  Aa[idpa] <- p
+  return(Aa)
+}
+
 # ========================= #
 # ==== USER FUNCTIONS: ====
 # ========================= #
@@ -1505,6 +1519,352 @@ plot.paramDemo <- function(x, demofun = "all", ...) {
   par(op)
 }
 
+# ----------------------- #
+# LIFE HISTORY VARIABLES: 
+# ----------------------- #
+# Main life history function:
+CalcLifeHist <- function(theta = NULL, beta = NULL, dx = NULL, 
+                         model = "GO", shape = "simple",
+                         modelFert = "quadratic", ageMatur = 0, 
+                         maxAge = NULL, lambdaMethod = "matrix") {
+  
+  # ----------------------------------------------- #
+  # CHECK THAT THE MINIMUM INFORMATION IS PROVIDED:
+  # ----------------------------------------------- #
+  if (all(is.null(theta), is.null(beta))) {
+    stop("No basic information provided. 
+    Provide vectors of survival and fertility parameters 'theta' and 'beta'.")
+  }
+  
+  # ------------------------------------------------ #
+  # A) GENERAL SETUP AND VERIFICATION OF PARAMETERS:
+  # ------------------------------------------------ #
+  # Verify fertility model:
+  .VerifyFertMod(modelFert = modelFert)
+  
+  # Extract beta attributes:
+  betaAttr <- .SetBeta(beta = beta, modelFert = modelFert)
+  beta <- betaAttr$beta
+  
+  # Verify model and shape:
+  .VerifySurvMod(model = model, shape = shape)
+  
+  # Extract theta attributes:
+  thetaAttr <- .SetTheta(theta = theta, model = model, shape = shape)
+  theta <- thetaAttr$theta
+  
+  # --------------------- #
+  # B) PREPARE FUNCTIONS:
+  # --------------------- #
+  # a) Mortality function:
+  .CalcMort <- function(theta, ...) UseMethod(".CalcMort")
+  .CalcMort.matrix <- .DefineMortMatrix(model = model, shape = shape)
+  .CalcMort.numeric <- .DefineMortNumeric(model = model, shape = shape)
+  
+  # b) Cummulative hazard:
+  .CalcCumHaz <- function(theta, ...) UseMethod(".CalcCumHaz")
+  .CalcCumHaz.matrix <- .DefineCumHazMatrix(model = model, shape = shape)
+  .CalcCumHaz.numeric <- .DefineCumHazNumeric(model = model, shape = shape)
+  
+  # c) Survival:
+  .CalcSurv <- function(theta, x) {
+    exp(-.CalcCumHaz(theta = theta, x = x))
+  }
+  
+  # d) Fertility function:
+  .CalcFert <- function(beta, ...) UseMethod(".CalcFert")
+  .CalcFert.numeric <- .DefineFertilityNumeric(modelFert = modelFert)
+  .CalcFert.matrix <- .DefineFertilityMatrix(modelFert = modelFert)
+  
+  # ------------------------ #
+  # PREPARE AGE INFORMATION:
+  # ------------------------ #
+  # age interval length:
+  if (is.null(dx)) {
+    dx <- 1
+  }
+  
+  # Maximum age:
+  if (is.null(maxAge)) {
+    maxAge <- .FindMaxAge(theta, bound = 1e-10, survFunc = .CalcSurv)
+  }
+  
+  #  age vector:
+  x <- seq(0, maxAge, dx)
+  
+  # Number of age intervals:
+  nx <- length(x)
+  
+  # Calcualte survival:
+  Sx <- CalcSurv(theta = theta, x = x, model = model, shape = shape)
+  
+  # Age-specific survival:
+  px <- CalcSurv(theta = theta, x = x + 1, model = model, shape = shape) /
+    CalcSurv(theta = theta, x = x, model = model, shape = shape)
+  
+  # Age-specific fertility:
+  mx <- c(rep(0, length(which(x < ageMatur))), 
+          CalcFert(beta = beta, x = x[x >= ageMatur] - ageMatur, 
+                   modelFert = modelFert))
+  
+  # 'Continous' age interval length:
+  dxc <- 0.001
+  
+  # 'Continous' age vector:
+  xc <- seq(0, maxAge, dxc)
+  
+  # 'Continuous' survival:
+  Sxc <- CalcSurv(theta = theta, x = xc, model = model, shape = shape)
+  
+  # 'Continous' fertility:
+  mxc <- c(rep(0, length(which(xc < ageMatur))), 
+           CalcFert(beta = beta, x = xc[xc >= ageMatur] - ageMatur, 
+                    modelFert = modelFert))
+  
+  # ------------------------------------------------ #
+  # FIND LAMBDA, AGE STRUCTURE, REPRODUCTIVE VALUES:
+  # ------------------------------------------------ #
+  if (lambdaMethod == "Lotka") {
+    # ------------------------------------- #
+    # Using Lotka's (1913) renewal equation:
+    # ------------------------------------- #
+    Findr <- function(r) {
+      lhs <- sum(exp(-r * xc) * Sxc * mxc * dxc)
+      return((lhs - 1)^2)
+    }
+    
+    # Find r:
+    rout <- optimize(f = Findr, interval = c(0, 5), tol = 10e-20)
+    
+    # Extract r:
+    r <- rout$minimum
+    
+    # Population growth rate:
+    lambda <- exp(r)
+    
+    # Calculate stable age structure:
+    w <- (Sx * exp(-r * x)) / sum(Sx * exp(-r * x))
+    
+    # Reproductive value:
+    v <- sapply(x, function(xx) {
+      idsx <- which(xc >= xx)
+      sum(exp(-r * (xc[idsx] - xx)) * Sxc[idsx] * mxc[idsx] * dxc) / 
+        Sxc[idsx[1]]
+    })
+    
+  } else if (lambdaMethod == "matrix") {
+    # ---------------------- #
+    # Using matrix algebra:
+    # ---------------------- #
+    # Transition matrix:
+    A <- .FillLeslieMatr(p = px, f = mx, n = nx)
+    
+    # Eigen analysis:
+    eA <- eigen(A)
+    eAt <- eigen(t(A))
+    
+    # Population growth rate:
+    lambda <- Re(eA$value[1])
+    w <- abs(Re(eA$vector[, 1])) / sum(abs(Re(eA$vector[, 1])))
+    v <- abs(Re(eAt$vectors[, 1]))
+    v <- v / v[1]
+    r <- log(lambda)
+  } else {
+    stop("Wrong 'lambdaMethod', options are 'Lotka' or 'matrix'.")
+  }
+  
+  # Net reproductive rate:
+  R0 <- sum(Sxc * mxc * dxc)
+  
+  # Cohort generation time:
+  Tc <- sum(xc * Sxc * mxc * dxc) / R0
+  
+  # Demographic dispersion:
+  sigmad <- sum((xc - Tc)^2 * Sxc * mxc * dxc) / R0
+  
+  # Generation time of stable population:
+  Ts <- sum(exp(-r * xc) * xc * Sxc * mxc * dxc)
+  
+  # Damping ratio:
+  # tau <- lambda / abs(Re(eA$values[2]))
+  
+  # Population entropy:
+  phi <- Sxc * mxc * lambda^(-xc) 
+  idn0 <- which(phi > 0)
+  phi <- phi[idn0]
+  H <- - 1 / Ts * sum(phi * log(phi) * dxc)
+  
+  # Sensitivities:
+  # spx <- v * w / sum(v * w)
+  # smx <- v[1] * w / sum(v * w)
+  spx <- c(v[-1] * w[-nx] / sum(v * w), NA)
+  smx <- c(v[1] * w[-nx] / sum(v * w), NA)
+  
+  # Elasticities:
+  epx <- px / lambda * spx
+  emx <- mx / lambda * smx
+  
+  # Prepare outputs:
+  lhlabs <- c(r = "Intrinsic population growth rate", 
+              lambda = "Stable population growth", 
+              Ts = "Generation time of stable population", 
+              Tc = "Cohort generation time", 
+              R0 = "Net reproductive rate", 
+              sigmad = "Demographic dispersion", 
+              H = "Population entropy")
+  lhnames <- names(lhlabs)
+  
+  lifeHist <- data.frame(Description = lhlabs, Variable = lhnames, 
+                         Value = c(r, lambda, Ts, Tc, R0, sigmad, H))
+  rownames(lifeHist) <- NULL
+  
+  # Start output list:
+  outList <- list(demoTab = data.frame(Age = x, Sx = Sx, px = px, qx = 1 - px,
+                                       mx = mx, w = w, v = v, sp = spx, 
+                                       sm = smx, ep = epx, em = emx),
+                  lifeHist = lifeHist,
+                  settings = list(theta = theta, beta = beta, model = model,
+                                  shape = shape, modelFert = modelFert,
+                                  ageMatur = ageMatur))
+  # Assign class:
+  class(outList) <- c("PDlifeHist")
+  
+  # return output:
+  return(outList)
+}
+
+# Print life history:
+print.PDlifeHist <- function(x, ...) {
+  demolabs <- c(px = "Age-specific survival", 
+                mx = "Age-specific fertility", 
+                w = "Stable age structure",
+                v = "Reproductive value",
+                sp = "Sensitivity to survival",
+                sm = "Sensitivity to fertility",
+                ep = "Elasticity to survival",
+                em = "Elasticity to fertility")
+  
+  
+  cat("Life history variables:\n")
+  cat("-----------------------\n")
+  print(x$lifeHist, ...)
+  
+}
+
+# Summary life history:
+summary.PDlifeHist <- function(object, ...) {
+  
+  cat("Settings:\n")
+  cat("=========\n")
+  cat("Survival:\n")
+  cat("---------\n")
+  cat(sprintf("model: %s\n", object$settings$model))
+  cat(sprintf("shape: %s\n", object$settings$shape))
+  cat("theta parameters:\n")
+  print(object$settings$theta)
+  cat("\nFertility:\n")
+  cat("----------\n")
+  cat(sprintf("modelFert: %s\n", object$settings$modelFert))
+  cat("beta parameters:\n")
+  print(object$settings$beta)
+  
+  
+  cat("\nLife history variables:\n")
+  cat("=======================\n")
+  print(object$lifeHist, ...)
+  
+}
+
+# plot life history:
+plot.PDlifeHist <- function(x, type = "rates", ...) {
+  # Store par settings:
+  op <- par(no.readonly = TRUE)
+  
+  # Additional arguments:
+  args <- list(...)
+  nameArgs <- names(args)
+  
+  # demo labels:
+  demolabs <- c(px = expression(paste("Age-specific survival, ", 
+                                      italic(p[x]))), 
+                mx = expression(paste("Age-specific fertility, ", 
+                                      italic(m[x]))), 
+                w = expression(paste("Stable age structure, ", omega)),
+                v = expression(paste("Reproductive value, ", nu)),
+                sp = expression(paste("Sensitivity to survival, ", 
+                                      italic(s[p]))),
+                sm = expression(paste("Sensitivity to fertility, ", 
+                                      italic(s[m]))),
+                ep = expression(paste("Elasticity to survival, ", 
+                                      italic(e[p]))),
+                em = expression(paste("Elasticity to fertility, ", 
+                                      italic(e[m]))))
+  
+  # xlim:
+  if ("xlim" %in% nameArgs) {
+    xlim <- args$xlim
+  } else {
+    xlim <- range(x$demoTab$Age)
+  }
+  
+  # Color:
+  if ("col" %in% nameArgs) {
+    col <- args$col 
+  } else {
+    col <- "dark red"
+  }
+  
+  # lwd:
+  if ("lwd" %in% nameArgs) {
+    lwd <- args$lwd
+  } else {
+    lwd <- 2
+  }
+  if (type == "rates") {
+    plList <- c("px", "mx", "v", "w")
+  } else if (type == "sensitivity") {
+    plList <- c("sp", "sm", "ep", "em")
+  } else if (type == "all") {
+    plList <- c("px", "mx", "w", "v", "sp", "sm", "ep", "em")
+  } else {
+    stop("Wrong 'type' argument, options are 'rates', 'sensitivity', or 'all'.")
+  }
+  npl <- length(plList)
+  
+  # Demographic rates:
+  # ------------------ #
+  # ylim:
+  if ("ylim" %in% nameArgs) {
+    ylim <- args$ylim
+  } else {
+    ylim <- sapply(plList, function(ix) {
+      if (ix %in% c("sp", "sm")) {
+        yl <- c(0, max(c(x$demoTab$sp, x$demoTab$sm), na.rm = TRUE))
+      } else if (ix %in% c("ep", "em")) {
+        yl <- c(0, max(c(x$demoTab$ep, x$demoTab$em), na.rm = TRUE))
+      } else {
+        yl <- c(0, max(x$demoTab[[ix]]))
+      }
+      return(yl)
+    })
+  }
+  
+  par(mfrow = c(npl / 2, 2), mar = c(4.1, 4.1, 1, 1))
+  for (demi in plList) {
+    if (inherits(ylim, "matrix")) {
+      yylim <- ylim[, demi]
+    } else {
+      yylim <- ylim
+    }
+    
+    plot(x$demoTab$Age, x$demoTab[[demi]], type = 'l', col = col, lwd = lwd, 
+         xlim = xlim, ylim = yylim, xlab = "Age", ylab = demolabs[demi])
+  }
+  
+  par(op)
+  
+}
+
 # --------------------------------------------------- #
 # SUMMARY STATISTICS AND OTHER DEMOGRAPHIC VARIABLES:
 # --------------------------------------------------- #
@@ -1691,6 +2051,7 @@ CalcAgeMaxFert <- function(beta, modelFert = "quadratic", ageMatur = 0,
   names(maxFertv) <- c("Age", "maxFert", "error", "iterations", "ageMatur")
   return(maxFertv)
 }
+
 
 # ---------------------------------------- #
 # DISCRETE AGE OR STAGE DEMOGRAPHIC RATES:

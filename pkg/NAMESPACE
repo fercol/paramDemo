@@ -2,14 +2,15 @@
 export("CalcAgeingRateMort", "CalcAgeMaxFert", "CalcDemo", 
        "CalcFert", "CalcLifeTable", "CalcMort", 
        "CalcRemainLifeExp", "CalcSurv", "CalcDiscrDemo", "plot.paramDemoLT", 
-       "plot.paramDemo", "SampleRandAge", 
+       "plot.paramDemo", "SampleRandAge", "CalcLifeHist", "plot.PDlifeHist",
+       "print.PDlifeHist", "summary.PDlifeHist",
        "CalcProductLimitEst", "plot.paramDemoPLE")
 
 # Import package snowfall
 importFrom("grDevices", "adjustcolor", "rainbow")
 importFrom("graphics", "axis", "layout", "legend", "lines", "mtext",
              "par", "plot", "polygon", "text", "Axis")
-importFrom("stats", "as.formula", "cor", "density", "dnorm",
+importFrom("stats", "as.formula", "cor", "density", "dnorm", "optimize",
              "model.matrix", "pnorm", "qnorm", "quantile", 
              "rnorm", "runif", "sd", "terms", "var", "dgamma", "pgamma",
            "rgamma", "qgamma", "dbeta", "rbeta", "pbeta", "qbeta", "optim")
@@ -19,3 +20,6 @@ importFrom("utils", "packageDescription")
 S3method("plot", "paramDemo")
 S3method("plot", "paramDemoLT")
 S3method("plot", "paramDemoPLE")
+S3method("plot", "PDlifeHist")
+S3method("print", "PDlifeHist")
+S3method("summary", "PDlifeHist")

@@ -1,51 +1,39 @@
-\name{CalcDemo}
-\alias{CalcDemo}
+\name{CalcLifeHist}
+\alias{CalcLifeHist}
 
 \title{
- Calculating Parametric Age-Specific Mortality, Survival, and Fertility
+Calculating life history variables from parametric models of age-specific demographic rates.
 }
-
 \description{
-  \code{CalcDemo} is used to calculate age-specific demographic rates and summary statistics from parametric models of survival and fertility.
+\code{CalcLifeHist} uses parametric models of survival and fertility to calculate age-specific demographic rates, stable age structure, reproductive values, sensitivity and elasticities of the stable population growth rate to demographic rates, as well as different life history variables such as generation time or population entropy.
 }
-
-\usage{CalcDemo(theta = NULL, beta = NULL, x = NULL, dx = NULL, 
-          model = "GO",  shape = "simple", modelFert = "quadratic", 
-          type = "both", minSx = 0.01,  summarStats = TRUE, 
-          ageMatur = 0, maxAge = NULL, agesAR = NULL,  
-          SxValsAR = NULL)}
-
+\usage{
+CalcLifeHist(theta = NULL, beta = NULL, dx = NULL,
+             model = "GO", shape = "simple",
+             modelFert = "quadratic", ageMatur = 0, 
+             maxAge = NULL, lambdaMethod = "matrix")
+}
+%- maybe also 'usage' for other objects documented here.
 \arguments{
 	\item{theta }{Numerical vector of age-specific mortality parameters (see details).}
 
 	\item{beta }{Numerical vector of age-specific fertility parameters (see details).}
-
-	\item{x }{Numerical vector of ages. If \code{NULL} (default), ages are constructed from age 0 to the age when the survival function reaches 0.0001.}
-
-	\item{dx }{Numerical value for age increments. If \code{NULL}, the default value is 0.01.}
-
-	\item{model }{Mortality model, options are \dQuote{\code{EX}} = exponential (i.e., constant mortality with age), \dQuote{\code{GO}} = Gompertz (default), \dQuote{\code{WE}} = Weibull, or \dQuote{\code{LO}} = logistic.}
+	
+	\item{dx }{Numerical value for the age-interval increments, default is 1.}
+	
+		\item{model }{Mortality model, options are \dQuote{\code{EX}} = exponential (i.e., constant mortality with age), \dQuote{\code{GO}} = Gompertz (default), \dQuote{\code{WE}} = Weibull, or \dQuote{\code{LO}} = logistic.}
 
 	\item{shape }{The overall shape of the mortality model. Values are: \dQuote{\code{simple}} = no extra parameters added; \dQuote{\code{Makeham}} = a constant parameter is added to the mortality; and \dQuote{\code{bathtub}} = a Gompertz declining mortality for early ages and a constant parameter are added to the mortality model (see \code{details}).}
 
 	\item{modelFert }{Age-specific fertility model. Options are \dQuote{\code{quadratic}} (default), \dQuote{\code{PeristeraKostaki}}, \dQuote{\code{ColcheroMuller}}, \dQuote{\code{Hadwiger}}, \dQuote{\code{gamma}}, \dQuote{\code{beta}}, \dQuote{\code{skewNormal}}, \dQuote{\code{gammaMixture}}, \dQuote{\code{HadwigerMixture}}, \dQuote{\code{skewSymmetric}}, \dQuote{\code{skewLogistic}} (see details)}
-
-	\item{type }{Character string specifying the demographic rates to be calculated. Options are \dQuote{\code{both}} (default), \dQuote{\code{survival}}, \dQuote{\code{fertility}}.}
-
-	\item{minSx }{Numerical value specifying the lower bound of the survival function to find the maximum age. The default is 0.01.}
-
-	\item{summarStats }{Logical specifying whether summary statistics such as life expectancy, lifespan equality and ageing rates at the specified ages should be calculated.}
-
-	\item{ageMatur }{Numerical value specifying the age at sexual maturity, used as the lower bound for the age-specific fertility. Default is 0.}
-
-	\item{maxAge }{Numerical values for the maximum age for survival and fertility demographic rates. If \code{NULL} (default), the maximum age is calculated when the survival function reaches \code{minSx}. }
-
-	\item{agesAR }{Numerical vector of ages at which ageing rates should be calculated. If \code{NULL} (default) they are calculated at the ages when the survival function reaches 0.5, 0.2, and 0.05. }
-
-	\item{SxValsAR }{Alternative to \code{agesAR}, numerical value for the levels of survival at which ageing rates should be calculated. If \code{NULL} (default) they are calculated at the ages when the survival function reaches 0.5, 0.2, and 0.05.}
-
+	
+	\item{ageMatur }{Numerical value for the age at maturity.}
+	
+	\item{maxAge }{Numerical value for the maximum age. If \code{NULL} (default),
+	it is calculated from the survival (see details).}
+	
+	\item{lambdaMethod }{Character string specifying the method to calculate the intrinsic population growth rate. Values are \dQuote{\code{matrix}} for methods based on population projection matrices, or \dQuote{\code{Lotka}} for numerical approximation of the root of the Lotka equation (see details)}
 }
-
 \details{
 \bold{1) Age-specific mortality and survival models:}
 
@@ -132,7 +120,7 @@ S(x | \theta) = \exp\left[\frac{e^{a_0}}{a_1}\left(e^{a_1 x} - 1\right)-cx\right
 
 The most widely use \dQuote{\code{bathtub}} shaped model is the \bold{Siler mortality model} (Siler 1979), which provides considerably good fits to mammalian data. The arguments for the Siler model are:
 
-\preformatted{CalcDemo(..., model = "GO", shape = "bathtub", ...)}
+\preformatted{CalcLifeHist(..., model = "GO", shape = "bathtub", ...)}
 
 \bold{2) Specifying theta parameters:}
 
@@ -166,83 +154,88 @@ where \eqn{f: \mathbb{R}_{\ge 0} \rightarrow \mathbb{R}_{\ge 0}} is a probabilit
 
 Argument \code{beta} requires a vector of parameters. For instance, for a quadratic model with parameter vector \eqn{\bm{\beta}^{\top} = [b_0, b_1, b_2]} where \eqn{b_0 = 0.5}, \eqn{b_1 = 0.01} and \eqn{b_2 = 10}, the argument should be specified as
 
-\code{CalcDemo(..., beta = c(b0 = 0.5, b1 = 0.01, b2 = 10), ...)}
+\code{CalcLifeHist(..., beta = c(b0 = 0.5, b1 = 0.01, b2 = 10), ...)}
 
 Note that in this example the parameter names are specified directly, this is required when \code{checkBeta = FALSE}. Although assigning the names to each parameter is not necessary when \code{checkBeta = TRUE}, it is advisable to ensure that the right values are assigned to the right parameter.  
 
 If argument \code{checkBeta} is set to \code{TRUE}, then the vector of \code{beta} parameters is verified for consistency with the requirements of the fertility model selected. 
 
-\bold{5) Summary statistics:}
+\bold{5) Methods to estimate lambda, r, stable age structure and reproductive values:}
 
-\code{5.1) Ageing rates:}
+If argument \code{lambdaMethod} is set to \dQuote{\code{matrix}}, the function calculates the assymptotic population growth rate \eqn{\lambda} as the dominant eigen-value of the resulting population projection matrix \eqn{\bm{A}} (Caswell and Wegner 1978, Kroon \emph{et al.} 1986, Caswell 2001). The intrinsing population growth rate is then \eqn{r = \log \lambda}, while the stable age-structure, \eqn{\bm{\omega}^{\top}=[\omega_0, \omega_1, \dots, \omega_\tau]}, where \eqn{\tau} is the maximum age of the population, is given by the corresponding right eigen vector, standardized by its norm. The reproductive value is the corresponding left eigen vector, \eqn{\bm{\nu}^{\top} = [\nu_0, \nu_1, \dots, \nu_\tau]}, standardized such that \eqn{\nu_0 = 1}.
 
-Given a vector of ages \eqn{x_1, x_2, \dots, x_n} specified by the user with argument \code{agesAR}, the function calculates ageing rates at age \eqn{x_i} as
+If argument \code{lambdaMethod} is set to \dQuote{\code{Lotka}}, the function estimates the intrinsic population growth rate, \eqn{r}, by finding the real root of Lotka' (1913) equation, given by
 \deqn{
-\frac{d}{dx}\ln [\mu(x)] |_{x = x_i}, 
+\int_0^\tau e^{-rx} S(x) m(x) dx = 1.
 }
-for \eqn{i = 1, 2, \dots, n}.
 
-\code{5.2) Ages at different levels of survival:}
-
-The function calculates the ages when the survival function reaches specific values(default at 0.2, 0.1, 0.05), commonly used as population measures of old age. Thus, for a given value \eqn{s = S(x)}, the function computes the inverse function
+The stable population structure is then calculated as
 \deqn{
-x = S^{-1}(s).
+\omega_x = \frac{e^{-rx} S(x)}{\sum_{k=0}^\tau e^{-rk} S(k)},
 }
-
-\code{5.3) Remaining life expectancy:}
-
-The function calculates the life expectancy at birth as
+while the reproductive value is given by
 \deqn{
-e_{0} = \int_{0}^{\infty} S(t) dt.
+\nu_x = \frac{\int_x^\tau{e^{-r(k - x)}} S(k) m(k) dk}{S(x)}.
 }
 
-\code{5.4) Measures of inequality and equality:}
-
-The function calculates different measures of inequality and equality in the distribution of ages at death that results from the parametric model:
-
-- \code{Lifespan inequality:} (Demetrius 1974, Keyfitz and Caswell 2005) given by
-
+The function then calculates the sensitivities of lambda to age-specific survival as
 \deqn{
-H = -\frac{\int_{0}^{\infty} S(x) \ln [S(x)] dx}{e_0}
+s_{p,x} = \frac{\nu_{x}\omega_{x+1}}{<\bm{\nu}\bm{\omega}>}, \quad \text{for } x<\tau
 }
-
-- \code{Lifespan equality:} (Colchero \emph{et al.} 2016, Colchero \emph{et al.} 2021) given by
-
+where the denominator is the inner product, and the sensitivity of lambda to the reproductive value at \eqn{x} is given by
 \deqn{
-\varepsilon = - \ln H.
+s_{m,x} = \frac{\nu_{1}\omega_{x+1}}{<\bm{\nu}\bm{\omega}>}, \quad \text{for } x<\tau
 }
 
-- \code{Gini coefficient:} (Gini 1912, Shkolnikov \emph{et al.} 2003) given by
-
+Elasticities are calculated as
 \deqn{
-G = 1 - \frac{1}{e_0} \int_0^{\infty} [l(x)]^2 dx
+e_{p,x} = \frac{p_x}{\lambda} s_{p,x} \text{ and } e_{m,x} = \frac{m_x}{\lambda} s_{m,x}.
 }
 
-- \code{Coefficient of variation:} given by
+\bold{6) Calculation of life history variables}
 
+The first life history variables are the intrinsic population growth rate \eqn{r} and the stable population growth rate \eqn{\lambda = e^r}, described in the previous section. 
+
+The function also provides a number of life history variables described by Tuljapurkar \emph{et al.} (2009). For instance, it provides the generation time for the stable population as
 \deqn{
-CV = \frac{\sqrt{\sigma^2}}{e_0},
+T_s = \int_0^{\tau} x e^{-rx} S(x) m(x) dx,
 }
-where \eqn{\sigma^2} is the variance in ages at death.
+as well as the cohort generation time, given by
+\deqn{
+T_c = \frac{\int_0^{\tau} x S(x) m(x) dx}{R_0},
+}
+where \eqn{R_0} is the net reproductive rate, given by
+\deqn{
+R_0 = \int_0^{\tau} S(x) m(x) dx.
 }
 
+It provides the demographic dispersion given by
+\deqn{
+\sigma^2_d = \frac{\int_0^\tau (x - T_c)^2 S(x) m(x) dx}{R_0}
+}
+which measures the dispersion of reproduction across ages. 
+
+Finally, it calculates the population entropy as proposed by Demetrius (1974), given by
+\deqn{
+H = - \frac{\int_0^{\tau} \rho(x) \log \rho(x) dx}{T_s}
+}
+where \eqn{\rho(x) = e^{-r x} S(x) m(x)}.
+}
 \value{
-\code{CalcDemo} returns an object of class \dQuote{\code{paramDemo}} with output consisting of two lists, one for survival and one for fertility. The survival list can be called as \code{object$surv} while the fertility list is in \code{object$fert}. Both include the following outputs:
-
-\item{functs }{data.frame including the follwing columns for survival: \code{age}, \code{mort} for the mortality function, \code{surv} for the survival, \code{pdf} for the probability density function of ages at death, and \code{cumhaz} for the cumulative hazards. For fertility it includes columns for \code{age} and \code{fert} for the age-specific fertility.} 
-  
-  \item{summStats }{list with elements: \code{calculated} indicating whether summary statistics were calculated, \code{ageingRates} with the resulting actuarial ageing rates, and \code{summStatsMort} with ages at which the survival function reaches different levels (default 0.5, 0.2, 0.05) (e.g., \code{AgeSx=0.5}), with the life expectancy \code{lifeExp}, \code{lifespIneq} for the lifespan inequality (see Demetrius 1974), \code{lifespEqual} with the lifespan equality as in Colchero \emph{et al.} (2021), \code{Gini} for the Gini coefficient, and \code{CoeffVar} for the coefficient of variation in the distribution of ages at death. For fertility, the list includes a logical \code{calculated} to indicate if summary statistics were calculated, and \code{summStatsFert} with the age at maximum fertility calculations (see \code{\link{CalcAgeMaxFert}}).} 
-  
-  \item{settings }{list with the details of the parameters and the models used.} 
-  
-  \item{analyzed }{logical indicating whether \code{surv} or \code{fert} were calculated.} 
+The function produces an object of class \dQuote{\code{PDlifeHist}}, which consists of a list with the following elements:
+\item{demoTab }{A data frame with the resulting individual ages, the survival \eqn{S(x)}, the age-specific survival probability \eqn{p_x}, the age-specific mortality probability \eqn{q_x}, the age-specific fertility rate \eqn{m_x}, the stable age structure \eqn{omega_x}, the age specific reproductive value \eqn{nu_x}, and the sensitivities and elasticities.}
+\item{lifeHist }{A data frame with the life history variables described in details, including a description.}
+\item{settings }{A list with the information of the models and parameters as provided by the user.}
 }
-
 \references{
 Asili S., Rezaei S., Najjar, L. (2014) Using Skew-Logistic Probability Density Function as a Model for Age-Specific Fertility Rate Pattern. \emph{BioMed Research International}, 2014, 790294.
 
 Azzalini, A. (1985) A Class of Distributions Which Includes the Normal Ones. \emph{Scandinavian Journal of Statistics}, 2, 171-178.
 
+Caswell, H. & Werner, P. A. (1978) Transient Behavior and Life History Analysis of Teasel (Dipsacus Sylvestris Huds.). Ecology 59, 53-66.
+
+Caswell, H. (2001) Matrix Population Models: Construction, Analysis and Interpretation. (Sinauer Associates).
+  
 Chandola, T., Coleman D.A., Hiorns R.W. (1999) Recent European fertility patterns: Fitting curves to `distorted' distributions. \emph{Population Studies}, 53, 317-329.
 
 Colchero, F. (\emph{In prep.}) Inference on age-specific fertility in ecology and evolution. Learning from other disciplines and improving the state of the art. 
@@ -267,6 +260,10 @@ Hoem, J.M., Madien, D., Nielsen, J.L., Ohlsen, E.M., Hansen, H.O., Rennermalm, B
 
 Keyfitz, N., Caswell, H. (2005) Applied Mathematical Demography. (Springer-Verlag).
 
+Kroon, H. de, Plaisier, A., Groenendael, J. van & Ecology, H. C. (1986) Elasticity: the relative contribution of demographic parameters to population growth rate. Ecology 67, 1427-1431.
+
+Lotka, A. J. (1913) A natural population norm. II. Journal of the Washington Academy of Sciences 3, 289-293.
+  
 Makeham, W. M. (1866) On the law of mortality \emph{Journal of the Institute of Actuaries} 13, 1-34.
   
 Mazzuco, S., Scarpa, B. (2011) Fitting age-specific fertility rates by a skew- symmetric probability density function. (Working paper 10), University of Padua.
@@ -287,26 +284,18 @@ Siler W. A (1979) competing-risk model for animal mortality. \emph{Ecology} 60, 
 \author{Fernando Colchero \email{fernando_colchero@eva.mpg.de}}
 
 \seealso{
-\code{\link{CalcSurv}} to calculate age-specific survival, \code{\link{CalcMort}} to calculate age-specific mortality, \code{\link{CalcFert}} to calculate age-specific fertility.
-
-\code{\link{CalcAgeingRateMort}} to calculate ageing rates from parametric models of age-specific mortality. \code{\link{CalcRemainLifeExp}} to calculate remaining life expectancy from parametric models of age-specific mortality. \code{\link{CalcAgeMaxFert}} to calculate the age at maximum fertility from parametric models of age-specific fertility.
-
-\code{\link{CalcLifeHist}} to calculate life history variables from parametric demographic models.
+ \code{\link{CalcDemo}} to calculate parametric demographic functions.
 }
-
-
-
 \examples{
-# Create paramDemo object from Gompertz mortality and
-# quadratic fertility:
-dem <- CalcDemo(theta = c(b0 = -5, b1 = 0.1), 
-                 beta = c(b0 = 0.5, b1 = 0.01, b2 = 10),
-                 summarStats = TRUE, agesAR = c(5, 10))
+# Calculate life histories on the defalult models:
+test <- CalcLifeHist(theta = c(b0 = -3, b1 = 0.1), 
+                     beta = c(b0 = 1, b1 = 0.01, b2 = 5),
+                     ageMatur = 2)
+                     
+# Print results:
+test
 
-# Plot demographic object:
-plot(dem)
-
+# Plot results:
+plot(test, type = "all")
 }
-
-\keyword{models}
-
+\keyword{math}
