@@ -788,6 +788,7 @@
 # ------------- #
 # AGEING RATES:
 # ------------- #
+# Mortality (actuarial) ageing rates:
 .DefineARmort <- function(model = "GO", shape = "simple") {
   # -------------------------------------
   # Exponential (i.e. constat mortality):
@@ -1274,13 +1275,32 @@ CalcDemo <- function(theta = NULL, beta = NULL, x = NULL, dx = NULL,
       ageMaxFert <- CalcAgeMaxFert(beta = beta, modelFert = modelFert, 
                                    ageMatur = ageMatur, maxAge = maxAge)
       calc <- TRUE
+      
+      # Ageing rates:
+      if (is.null(agesAR)) {
+        if (is.null(SxValsAR)) SxValsAR <- c(0.5, 0.2, 0.05)
+        Sx <- .CalcSurv(theta, xInt)
+        agesAR <- sapply(SxValsAR, function(sxt) {
+          idx <- which(abs(Sx - sxt) == min(abs(Sx - sxt)))
+          return(xInt[idx])
+        })
+      } else {
+        SxValsAR <- .CalcSurv(theta, agesAR)
+      }
+      ageingRatesFert <- cbind(CalcAgeingRateFert(beta = beta, x = agesAR, 
+                                              modelFert = modelFert, 
+                                              ageMatur = ageMatur), 
+                           Surv = round(SxValsAR, 4))
+      
     } else {
       ageMaxFert <- NA
+      ageingRatesFert <- NA
       calc <- FALSE
     }
     fertList <- list(functs = data.frame(age = x[which(x >= ageMatur)], 
                                          fert = fert),
                      summStats = list(calculated = calc, 
+                                      ageinRatesFert = ageingRatesFert,
                                       summStatsFert = ageMaxFert),
                      settings = list(beta = beta, modelFert = modelFert), 
                      analyzed = TRUE)
@@ -1958,6 +1978,47 @@ CalcAgeingRateMort <- function(theta, x, model = "GO", shape = "simple",
   rownames(ar) <- NULL
   
   return(ar)
+}
+
+# Reproductive ageing rate:
+CalcAgeingRateFert <- function(beta, x, modelFert = "quadratic", ageMatur = 0,
+                               checkBeta = TRUE) {
+  # Verify fertility model:
+  .VerifyFertMod(modelFert = modelFert)
+  
+  # Extract beta attributes:
+  if (checkBeta) {
+    betaAttr <- .SetBeta(beta = beta, modelFert = modelFert)
+    beta <- betaAttr$beta
+  }
+  
+  # Verify that the age x is larger than the age at maturity:
+  if (all(x < ageMatur)) {
+    stop("Ages 'x' occur before the age at maturity 'ageMatur'.")
+  } else {
+    idlow <- which(x > ageMatur)
+  }
+  # a) Fertility method:
+  .CalcFert <- function(beta, ...) UseMethod(".CalcFert")
+  .CalcFert.matrix <- .DefineFertilityMatrix(modelFert = modelFert)
+  .CalcFert.numeric <- .DefineFertilityNumeric(modelFert = modelFert)
+  
+  # Age increase:
+  dx <- 0.000001
+  
+  # Fertility at x and x+dx
+  fertx <- .CalcFert(beta = beta, x = x[idlow] - ageMatur)
+  fertxdx <- .CalcFert(beta = beta, x = x[idlow] - ageMatur + dx)
+  
+  # Log-fertility:
+  lnfx <- log(fertx)
+  lnfxdx <- log(fertxdx)
+  
+  # Ageing rate:
+  Ar <- rep(NA, length(x))
+  Ar[idlow] <- (lnfxdx - lnfx) / dx
+  fAr <- cbind(x = x, AR = Ar)
+  return(fAr)
 }
 
 # Calculate age at maximum Fertility:
