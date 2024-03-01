@@ -1699,6 +1699,7 @@ CalcLifeHist <- function(theta = NULL, beta = NULL, dx = NULL,
   # smx <- v[1] * w / sum(v * w)
   spx <- c(v[-1] * w[-nx] / sum(v * w), NA)
   smx <- c(v[1] * w[-nx] / sum(v * w), NA)
+  smx[which(x >= ageMatur)] <- 0
   
   # Elasticities:
   epx <- px / lambda * spx
