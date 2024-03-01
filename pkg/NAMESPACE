@@ -1,5 +1,5 @@
 #Exports:
-export("CalcAgeingRateMort", "CalcAgeMaxFert", "CalcDemo", 
+export("CalcAgeingRateMort", "CalcAgeingRateFert", "CalcAgeMaxFert", "CalcDemo", 
        "CalcFert", "CalcLifeTable", "CalcMort", 
        "CalcRemainLifeExp", "CalcSurv", "CalcDiscrDemo", "plot.paramDemoLT", 
        "plot.paramDemo", "SampleRandAge", "CalcLifeHist", "plot.PDlifeHist",
