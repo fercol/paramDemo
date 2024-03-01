@@ -1300,7 +1300,7 @@ CalcDemo <- function(theta = NULL, beta = NULL, x = NULL, dx = NULL,
     fertList <- list(functs = data.frame(age = x[which(x >= ageMatur)], 
                                          fert = fert),
                      summStats = list(calculated = calc, 
-                                      ageinRatesFert = ageingRatesFert,
+                                      ageingRates = ageingRatesFert,
                                       summStatsFert = ageMaxFert),
                      settings = list(beta = beta, modelFert = modelFert), 
                      analyzed = TRUE)
