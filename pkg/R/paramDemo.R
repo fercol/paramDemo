@@ -760,18 +760,28 @@
 
 # Product limit estimator:
 .CalcPLE <- function(ageLast, ageFirst, departType) {
-  # Product limit estimator:
+  # Sort ages:
   idsort <- sort.int(ageLast, index.return = TRUE)$ix
+  
+  # Create new age vector:
   agev <- unique(ageLast[idsort])
+  
+  # Number of unique ages:
   nage <- length(agev)
+  
+  # Cx and delta x vector:
   Cx <- rep(0, nage)
   delx <- rep(0, nage)
+  
+  # Fill up Cx and delta:
   for (ii in 1:nage) {
     idNx <- which(ageFirst <= agev[ii] & ageLast >= agev[ii])
     Cx[ii] <- length(idNx) / nage
     idd <- which(ageLast == agev[ii] & departType == "D")
     delx[ii] <- length(idd)
   }
+  
+  # Calculate product limit estimator:
   ple <- cumprod((1 - 1 / (nage * Cx))^delx)
   
   # Add age 0:
@@ -1319,7 +1329,10 @@ CalcDemo <- function(theta = NULL, beta = NULL, x = NULL, dx = NULL,
 
 # Plotting demographic object:
 plot.paramDemo <- function(x, demofun = "all", ...) {
-  op <- par(no.readonly = TRUE)
+  # User par settings:
+  oldpar <- par(no.readonly = TRUE)
+  on.exit(par(oldpar))
+  
   # Additional arguments:
   args <- list(...)
   
@@ -1423,8 +1436,6 @@ plot.paramDemo <- function(x, demofun = "all", ...) {
   }
   
   # Produce plots:
-  op <- par(no.readonly = TRUE)
-  
   if (demofun == "all") {
     # -------------- #
     # MULTIPLE PLOTS:
@@ -1536,7 +1547,6 @@ plot.paramDemo <- function(x, demofun = "all", ...) {
     Axis(ylim, side = 2, pos = xlim[1], las = 2, cex.axis = cex.axis)
     mtext(ylab, side = 2, line = mar[2] / 2, cex = cex.lab)
   }
-  par(op)
 }
 
 # ----------------------- #
@@ -1798,8 +1808,9 @@ summary.PDlifeHist <- function(object, ...) {
 
 # plot life history:
 plot.PDlifeHist <- function(x, type = "rates", ...) {
-  # Store par settings:
-  op <- par(no.readonly = TRUE)
+  # User par settings:
+  oldpar <- par(no.readonly = TRUE)
+  on.exit(par(oldpar))
   
   # Additional arguments:
   args <- list(...)
@@ -1881,8 +1892,6 @@ plot.PDlifeHist <- function(x, type = "rates", ...) {
     plot(x$demoTab$Age, x$demoTab[[demi]], type = 'l', col = col, lwd = lwd, 
          xlim = xlim, ylim = yylim, xlab = "Age", ylab = demolabs[demi])
   }
-  
-  par(op)
   
 }
 
@@ -2046,7 +2055,7 @@ CalcAgeMaxFert <- function(beta, modelFert = "quadratic", ageMatur = 0,
   } else if (modelFert %in% c("ColcheroMuller", "Hadwiger")) {
     if (modelFert == "ColcheroMuller") {
       dfdx <- function(x, beta) {
-        x^3 + x^2 * (2 - beta["b2"]) + x0 * (1 - 2 * beta["b2"]) +
+        x^3 + x^2 * (2 - beta["b2"]) + x * (1 - 2 * beta["b2"]) +
           beta["b3"] / (2 * beta["b1"]) - beta["b2"]
       }
       dfdx2 <- function(x, beta) {
@@ -2255,6 +2264,10 @@ CalcLifeTable <- function(ageLast, ageFirst = NULL, departType, dx = 1,
 
 # Plot lifetable:
 plot.paramDemoLT <- function(x, demorate = "lx", inclCIs = FALSE, ...) {
+  # User par settings:
+  oldpar <- par(no.readonly = TRUE)
+  on.exit(par(oldpar))
+  
   # Additional arguments:
   args <- list(...)
   
@@ -2336,9 +2349,6 @@ plot.paramDemoLT <- function(x, demorate = "lx", inclCIs = FALSE, ...) {
   } else {
     cex.axis <- 1
   }
-  
-  # Produce plots:
-  op <- par(no.readonly = TRUE)
   
   if (demorate == "all") {
     # -------------- #
@@ -2476,7 +2486,6 @@ plot.paramDemoLT <- function(x, demorate = "lx", inclCIs = FALSE, ...) {
     Axis(ylim, side = 2, pos = xlim[1], las = 2, cex.axis = cex.axis)
     mtext(ylab, side = 2, line = mar[2] / 2, cex = cex.lab)
   }
-  par(op)
 }
 
 # ------------------------ #
@@ -2497,7 +2506,11 @@ CalcProductLimitEst <- function(ageLast, ageFirst = NULL, departType,
   # Set age first to 0 if NULL:
   if (is.null(ageFirst)) {
     ageFirst <- rep(0, n)
-  }
+  } 
+  
+  # Eliminate potential rounding errors:
+  ageFirst <- round(ageFirst, 8)
+  ageLast <- round(ageLast, 8)
   
   if (missing(departType)) {
     stop("Argument 'departType' missing. 
@@ -2567,6 +2580,10 @@ CalcProductLimitEst <- function(ageLast, ageFirst = NULL, departType,
 
 # Plot Product-limit estimator:
 plot.paramDemoPLE <- function(x, inclCIs = FALSE, ...) {
+  # User par settings:
+  oldpar <- par(no.readonly = TRUE)
+  on.exit(par(oldpar))
+  
   # Additional arguments:
   args <- list(...)
   
@@ -2650,8 +2667,6 @@ plot.paramDemoPLE <- function(x, inclCIs = FALSE, ...) {
   CIsCalc <- ifelse ("Lower" %in% colnames(x), TRUE, FALSE)
   
   # Produce plots:
-  op <- par(no.readonly = TRUE)
-  
   par(mar = c(4, 4, 1, 1), mfrow = c(1, 1))
   plot(xlim, ylim, col = NA, axes = FALSE, xlab = "", ylab = "")
   if (inclCIs & CIsCalc) {
@@ -2664,7 +2679,6 @@ plot.paramDemoPLE <- function(x, inclCIs = FALSE, ...) {
   Axis(ylim, side = 2, pos = xlim[1], las = 2, cex.axis = cex.axis)
   mtext(ylab, side = 2, line = mar[2] / 2, cex = cex.lab)
   mtext(xlab, side = 1, line = 2, cex = cex.lab)
-  par(op)
 }
 
 # --------------------------------------- #
