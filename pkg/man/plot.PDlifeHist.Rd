@@ -35,6 +35,8 @@ Function \code{summary} prints to the console, first the settings as specified b
 Function \code{plot} with argument \code{type} = \dQuote{\code{rates}} produces plots of the age-specific demographic rates (i.e., \eqn{p_x} and \eqn{m_x}) and the stable age structure and reproductive values (i.e., \eqn{\omega_x} and \eqn{\nu_x}). If argument \code{type} = \dQuote{\code{sensitivity}}, then it produces plots of the sensitivities and elasticities of \eqn{\lambda} to \eqn{p_x} and \eqn{m_x}. 
 }
 
+\value{No return value, called for plotting objects of class \dQuote{\code{PDlifeHist}}}
+
 \author{Fernando Colchero \email{fernando_colchero@eva.mpg.de}}
 
 \seealso{

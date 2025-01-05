@@ -41,7 +41,7 @@ where \eqn{b(x)} is the continuous fertility function.
 }
 
 \value{
-code{CalcDiscrDemo} returns an object of class \dQuote{\code{discrDemo}} that consist of a matrix with the following columns:
+\code{CalcDiscrDemo} returns an object of class \dQuote{\code{discrDemo}} that consist of a matrix with the following columns:
 
 	\item{age }{Partition of the full age subset into discrete intervals}
 	

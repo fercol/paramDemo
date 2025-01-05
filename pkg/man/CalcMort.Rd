@@ -137,6 +137,10 @@ If argument \code{checkTheta} is set to \code{TRUE}, then the vector of \code{th
 
 }
 
+\value{
+\code{CalcMort} and \code{CalcSur} return a vector of class \dQuote{\code{numeric}} with the hazard rate or cumulative survival values at the specified ages, respectively.
+}
+
 \references{
 Colchero, F. and J.S. Clark (2012) Bayesian inference on age-specific survival from capture-recapture data for censored and truncated data. \emph{Journal of Animal Ecology}. 81, 139-149.
 

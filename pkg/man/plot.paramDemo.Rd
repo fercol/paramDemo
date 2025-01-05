@@ -21,6 +21,7 @@
 
 }
 
+\value{No return value, called for plotting objects of class \dQuote{\code{paramDemo}}}
 
 \author{Fernando Colchero \email{fernando_colchero@eva.mpg.de}}
 

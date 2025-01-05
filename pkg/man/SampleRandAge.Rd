@@ -40,6 +40,10 @@ x_i = F^{-1}(u_i).
 In most cases, this is acheived numerically and thus the lower the value for argument \dQuote{\code{dx}} the higher the precision.
 }
 
+\value{
+\code{SampleRandAge} returns a vector of class \dQuote{\code{numeric}} with randmly generated ages at death.
+}
+
 \author{Fernando Colchero \email{fernando_colchero@eva.mpg.de}}
 
 \examples{

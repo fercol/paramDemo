@@ -49,6 +49,10 @@ Argument \code{beta} requires a vector of parameters. For instance, for a quadra
 If argument \code{checkBeta} is set to \code{TRUE}, then the vector of \code{beta} parameters is verified for consistency with the requirements of the model and shape selected. 
 }
 
+\value{
+\code{CalcFert} returns a vector of class \dQuote{\code{numeric}} with the fertility values at the specified ages.
+}
+
 \references{
 Asili, S., Rezaei, S. & Najjar, L. (2014) Using Skew-Logistic Probability Density Function as a Model for Age-Specific Fertility Rate Pattern. \emph{BioMed Research International}, 2014, 790294.
 
