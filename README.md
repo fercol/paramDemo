@@ -19,7 +19,7 @@ To install `paramDemo` version 1.0.2 (latest) from CRAN simply type to the conso
 install.packages("paramDemo")
 ```
 
-To install `paramDemo` from GitHub, type the following lines of code on the R console:
+To install later development versions of `paramDemo` from GitHub, type the following lines of code on the R console:
 
 ```R
 # Install and load 'devtools':
