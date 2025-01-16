@@ -1,7 +1,7 @@
 Package: paramDemo
 Type: Package
 Title: Parametric and Non-Parametric Demographic Functions and Applications
-Version: 1.0.1
+Version: 1.0.2
 Date: 2025-01-16
 Authors@R: c(person("Fernando", "Colchero", role = c("aut", "cre"), 
             email = "fernando_colchero@eva.mpg.de"))
