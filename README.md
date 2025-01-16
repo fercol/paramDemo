@@ -6,7 +6,7 @@
 
 The package includes several functions to calculate age-specific survival, mortality, and fertility, as well as summary statistics from these demographic rates. It includes:  
 
-- Functions to calculate age-specific survival and mortality from parametric mortality models following the conventions in package [BaSTA](https://github.com/fercol/BaSTA);
+- Functions to calculate age-specific survival and mortality from parametric mortality models following the conventions in package [BaSTA](https://github.com/fercol/basta2.0);
 - Functions to calculate age-specific fertility from parametric models following the conventions in package [BaFTA](https://github.com/fercol/BaFTA);
 - Functions to calculate non-parametric survival such as product limit estimators and life tables;
 - Functions to calculate summary statistics such as remaining life expectancy, ageing rates, lifespan inequality and equality, age at maximum fecundity;
