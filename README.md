@@ -14,6 +14,11 @@ The package includes several functions to calculate age-specific survival, morta
 - Functions to calculate and visualize stable population life history variables calculated from parametric models of age-specific survival and fertility.
 
 ## How to install paramDemo?
+To install `paramDemo` version 1.0.2 (latest) from CRAN simply type to the console:
+```R
+install.packages("paramDemo")
+```
+
 To install `paramDemo` from GitHub, type the following lines of code on the R console:
 
 ```R
