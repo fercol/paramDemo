@@ -1,0 +1,11 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+.DS_Store
+devel/
+paramDemo.Rcheck/
+paper/
+paper2/
+RCMDcheck/

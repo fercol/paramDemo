@@ -1659,12 +1659,12 @@ CalcLifeHist <- function(theta = NULL, beta = NULL, dx = NULL,
     # Using Lotka's (1913) renewal equation:
     # ------------------------------------- #
     Findr <- function(r) {
-      lhs <- sum(exp(-r * xc) * Sxc * mxc * dxc)
+      lhs <- sum(exp(-r * xc) * Sxc * mxc * dxc, na.rm = TRUE)
       return((lhs - 1)^2)
     }
     
     # Find r:
-    rout <- optimize(f = Findr, interval = c(0, 5), tol = 10e-20)
+    rout <- optimize(f = Findr, interval = c(-5, 5), tol = 10e-20)
     
     # Extract r:
     r <- rout$minimum
