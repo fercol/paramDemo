@@ -1704,16 +1704,16 @@ CalcLifeHist <- function(theta = NULL, beta = NULL, dx = NULL,
   }
   
   # Net reproductive rate:
-  R0 <- sum(Sxc * mxc * dxc)
+  R0 <- sum(Sxc * (mxc * dxc) * dxc)
   
   # Cohort generation time:
-  Tc <- sum(xc * Sxc * mxc * dxc) / R0
+  Tc <- sum(xc * Sxc * (mxc * dxc) * dxc) / R0
   
   # Demographic dispersion:
-  sigmad <- sum((xc - Tc)^2 * Sxc * mxc * dxc) / R0
+  sigmad <- sum((xc - Tc)^2 * Sxc * (mxc * dxc) * dxc) / R0
   
   # Generation time of stable population:
-  Ts <- sum(exp(-r * xc) * xc * Sxc * mxc * dxc)
+  Ts <- sum(exp(-r * xc) * xc * Sxc * (mxc * dxc) * dxc)
   
   # Damping ratio:
   # tau <- lambda / abs(Re(eA$values[2]))
