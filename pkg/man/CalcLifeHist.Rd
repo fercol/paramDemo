@@ -8,7 +8,7 @@ Calculating life history variables from parametric models of age-specific demogr
 \code{CalcLifeHist} uses parametric models of survival and fertility to calculate age-specific demographic rates, stable age structure, reproductive values, sensitivity and elasticities of the stable population growth rate to demographic rates, as well as different life history variables such as generation time or population entropy.
 }
 \usage{
-CalcLifeHist(theta = NULL, beta = NULL, dx = NULL,
+CalcLifeHist(theta = NULL, beta = NULL, 
              model = "GO", shape = "simple",
              modelFert = "quadratic", ageMatur = 0, 
              maxAge = NULL, lambdaMethod = "matrix")
@@ -18,9 +18,7 @@ CalcLifeHist(theta = NULL, beta = NULL, dx = NULL,
 	\item{theta }{Numerical vector of age-specific mortality parameters (see details).}
 
 	\item{beta }{Numerical vector of age-specific fertility parameters (see details).}
-	
-	\item{dx }{Numerical value for the age-interval increments, default is 1.}
-	
+
 		\item{model }{Mortality model, options are \dQuote{\code{EX}} = exponential (i.e., constant mortality with age), \dQuote{\code{GO}} = Gompertz (default), \dQuote{\code{WE}} = Weibull, or \dQuote{\code{LO}} = logistic.}
 
 	\item{shape }{The overall shape of the mortality model. Values are: \dQuote{\code{simple}} = no extra parameters added; \dQuote{\code{Makeham}} = a constant parameter is added to the mortality; and \dQuote{\code{bathtub}} = a Gompertz declining mortality for early ages and a constant parameter are added to the mortality model (see \code{details}).}
