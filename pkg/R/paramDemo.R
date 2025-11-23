@@ -1677,11 +1677,14 @@ CalcLifeHist <- function(theta = NULL, beta = NULL,
     w <- (Sx * exp(-r * x)) / sum(Sx * exp(-r * x))
     
     # Reproductive value:
-    v <- sapply(x, function(xx) {
-      idsx <- which(xc >= xx)
-      sum(exp(-r * (xc[idsx] - xx)) * Sxc[idsx] * mxc[idsx] * dxc) / 
-        Sxc[idsx[1]]
-    })
+    v <- rev(cumsum(rev(lam^(-xc) * Sxc * mxc * dxc)))
+    v <- lam^(xc) * v / Sxc
+    v <- v[which(xc %in% x)]
+    # v <- sapply(x, function(xx) {
+    #   idsx <- which(xc >= xx)
+    #   sum(exp(-r * (xc[idsx] - xx)) * Sxc[idsx] * mxc[idsx] * dxc) / 
+    #     Sxc[idsx[1]]
+    # })
     
   } else if (lambdaMethod == "matrix") {
     # ---------------------- #
