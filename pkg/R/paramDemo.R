@@ -1553,7 +1553,7 @@ plot.paramDemo <- function(x, demofun = "all", ...) {
 # LIFE HISTORY VARIABLES: 
 # ----------------------- #
 # Main life history function:
-CalcLifeHist <- function(theta = NULL, beta = NULL, dx = NULL, 
+CalcLifeHist <- function(theta = NULL, beta = NULL, 
                          model = "GO", shape = "simple",
                          modelFert = "quadratic", ageMatur = 0, 
                          maxAge = NULL, lambdaMethod = "matrix") {
@@ -1610,9 +1610,10 @@ CalcLifeHist <- function(theta = NULL, beta = NULL, dx = NULL,
   # PREPARE AGE INFORMATION:
   # ------------------------ #
   # age interval length:
-  if (is.null(dx)) {
-    dx <- 1
-  }
+  # if (is.null(dx)) {
+  #   dx <- 1
+  # }
+  dx <- 1
   
   # Maximum age:
   if (is.null(maxAge)) {
@@ -1704,16 +1705,16 @@ CalcLifeHist <- function(theta = NULL, beta = NULL, dx = NULL,
   }
   
   # Net reproductive rate:
-  R0 <- sum(Sxc * (mxc * dxc) * dxc)
+  R0 <- sum(Sxc * mxc * dxc)
   
   # Cohort generation time:
-  Tc <- sum(xc * Sxc * (mxc * dxc) * dxc) / R0
+  Tc <- sum(xc * Sxc * mxc * dxc) / R0
   
   # Demographic dispersion:
-  sigmad <- sum((xc - Tc)^2 * Sxc * (mxc * dxc) * dxc) / R0
+  sigmad <- sum((xc - Tc)^2 * Sxc * mxc * dxc) / R0
   
   # Generation time of stable population:
-  Ts <- sum(exp(-r * xc) * xc * Sxc * (mxc * dxc) * dxc)
+  Ts <- sum(exp(-r * xc) * xc * Sxc * mxc * dxc)
   
   # Damping ratio:
   # tau <- lambda / abs(Re(eA$values[2]))
