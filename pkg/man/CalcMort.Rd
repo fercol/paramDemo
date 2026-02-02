@@ -88,6 +88,15 @@ where \eqn{b_0, b_1, b_2 > 0}, with survival
 S_b(x | \bm{\theta}) = \left[1 + b_2 \frac{e^{b_0}}{b_1} \left(e^{b_1 x} - 1\right)\right]^{-1 / b_2}.
 }
 
+(e) \code{model = "GG"}: The reliability mortality model proposed by Gavrilov and Gavrilova (2001), calculated as 
+\deqn{
+\mu_b(x | \bm{\theta}) = \frac{b_2 b_1 b_0 e^{-b_0 x} (1 - e^{-b_0 x})^{b_1 - 1}}{1 - (1 - e^{-b_0 x})^{b_1}},
+}
+where \eqn{b_0, b_1, b_2 > 0}, with survival
+\deqn{
+S_b(x | \bm{\theta}) = \left[1 - (1 - e^{-b_0 x})^{b_1}\right]^{b_2}.
+}
+
 \code{1.2)}\code{Argument }\dQuote{\code{shape}}\code{:}
 
 The \code{shape} argument allows the user to extend these models in order to explore more complex mortality shapes. 

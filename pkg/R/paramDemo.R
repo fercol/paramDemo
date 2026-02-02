@@ -21,9 +21,10 @@
 # ---------------------------------------- #
 # Verify survival model and shape:
 .VerifySurvMod <- function(model, shape) {
-  if (!model %in% c("EX", "GO", "WE", "LO")) {
+  if (!model %in% c("EX", "GO", "WE", "LO", "GG")) {
     stop("Wrong 'model' specification.\n",
-         "       Alternatives are 'EX', 'GO', 'WE', or 'LO'.", call. = FALSE)
+         "       Alternatives are 'EX', 'GO', 'WE', 'LO', or 'GG'.", 
+         call. = FALSE)
   }
   if (!shape %in% c("simple", "Makeham", "bathtub")) {
     stop("Wrong 'shape' specification.\n",
@@ -67,6 +68,10 @@
     nTh <- 3
     nameTh <- c("b0", "b1", "b2")
     lowTh <- c(-Inf, 0, 0)
+  } else if (algObj$model == "GG") {
+    nTh <- 3 
+    nameTh <- c("b0", "b1", "b2")
+    lowTh <- c(0, 1, 1)
   }
   if (shape == "Makeham") {
     nTh <- nTh + 1
@@ -300,6 +305,30 @@
              theta[, "b1"] * (exp(theta[, "b1"] * x) - 1))
       }
     }
+  } else if (model == "GG") {
+    if (shape == "simple") {
+      mortfun <- function(theta, x) {
+        theta[, "b2"] * theta[, "b0"] * theta[, "b1"] * 
+          exp(- theta[, "b0"] * x) * 
+          (1 - exp(- theta[, "b0"] * x))^(theta[, "b1"] - 1) / 
+          (1 - (1 - exp(- theta[, "b0"] * x))^(theta[, "b1"]))
+      }
+    } else if (shape == "Makeham") {
+      mortfun <- function(theta, x) {
+        theta[, "c"] + theta[, "b2"] * theta[, "b0"] * theta[, "b1"] * 
+          exp(- theta[, "b0"] * x) * 
+          (1 - exp(- theta[, "b0"] * x))^(theta[, "b1"] - 1) / 
+          (1 - (1 - exp(- theta[, "b0"] * x))^(theta[, "b1"]))
+      }
+    } else {
+      mortfun <- function(theta, x) {
+        exp(theta[, "a0"] - theta[, "a1"] * x) + theta[, "c"] + 
+          theta[, "b2"] * theta[, "b0"] * theta[, "b1"] * 
+          exp(- theta[, "b0"] * x) * 
+          (1 - exp(- theta[, "b0"] * x))^(theta[, "b1"] - 1) / 
+          (1 - (1 - exp(- theta[, "b0"] * x))^(theta[, "b1"]))
+      }
+    }
   }
   return(mortfun)
 }
@@ -359,6 +388,29 @@
           exp(theta["b0"] + theta["b1"] * x) /
           (1 + theta["b2"] * exp(theta["b0"]) /
              theta["b1"] * (exp(theta["b1"] * x) - 1))
+      }
+    }
+  } else if (model == "GG") {
+    if (shape == "simple") {
+      mortfun <- function(theta, x) {
+        theta["b2"] * theta["b0"] * theta["b1"] * exp(- theta["b0"] * x) * 
+          (1 - exp(- theta["b0"] * x))^(theta["b1"] - 1) / 
+          (1 - (1 - exp(- theta["b0"] * x))^(theta["b1"]))
+      }
+    } else if (shape == "Makeham") {
+      mortfun <- function(theta, x) {
+        theta["c"] + theta["b2"] * theta["b0"] * theta["b1"] * 
+          exp(- theta["b0"] * x) * 
+          (1 - exp(- theta["b0"] * x))^(theta["b1"] - 1) / 
+          (1 - (1 - exp(- theta["b0"] * x))^(theta["b1"]))
+      }
+    } else {
+      mortfun <- function(theta, x) {
+        exp(theta["a0"] - theta["a1"] * x) + theta["c"] + 
+          theta["b2"] * theta["b0"] * theta["b1"] * 
+          exp(- theta["b0"] * x) * 
+          (1 - exp(- theta["b0"] * x))^(theta["b1"] - 1) / 
+          (1 - (1 - exp(- theta["b0"] * x))^(theta["b1"]))
       }
     }
   }
@@ -424,6 +476,24 @@
           (1 / theta[, "b2"])
       }
     }
+  } else if (model == "GG") {
+    if (shape == "simple") {
+      cumhazfun <- function(theta, x) {
+        - theta[, "b2"] * 
+          log(1 - (1 - exp(- theta[, "b0"] * x))^(theta[, "b1"]))
+      }
+    } else if (shape == "Makeham") {
+      cumhazfun <- function(theta, x) {
+        theta[, "c"] * x - theta[, "b2"] * 
+          log(1 - (1 - exp(- theta[, "b0"] * x))^(theta[, "b1"]))
+      }
+    } else {
+      cumhazfun <- function(theta, x) {
+        exp(theta[, "a0"]) / theta[, "a1"] * (1 - exp(-theta[, "a1"] * x)) +
+          theta[, "c"] * x - theta[, "b2"] * 
+          log(1 - (1 - exp(- theta[, "b0"] * x))^(theta[, "b1"]))
+      }
+    }
   }
   return(cumhazfun)
 }
@@ -484,6 +554,23 @@
                                  exp(theta["b0"]) / theta["b1"] *
                                  (exp(theta["b1"] * x) - 1)) *
           (1 / theta["b2"])
+      }
+    }
+  } else if (model == "GG") {
+    if (shape == "simple") {
+      cumhazfun <- function(theta, x) {
+        - theta["b2"] * log(1 - (1 - exp(- theta["b0"] * x))^(theta["b1"]))
+      }
+    } else if (shape == "Makeham") {
+      cumhazfun <- function(theta, x) {
+        theta["c"] * x - theta["b2"] * 
+          log(1 - (1 - exp(- theta["b0"] * x))^(theta["b1"]))
+      }
+    } else {
+      cumhazfun <- function(theta, x) {
+        exp(theta["a0"]) / theta["a1"] * (1 - exp(-theta["a1"] * x)) +
+          theta["c"] * x - theta["b2"] * 
+          log(1 - (1 - exp(- theta["b0"] * x))^(theta["b1"]))
       }
     }
   }
@@ -916,12 +1003,12 @@
     } else if (model == "WE") {
       MRDT <- x * (2^(1/(theta["b0"] - 1)) - 1)
       ageDep <- TRUE
-    } else {
+    } else if (model == "LO") {
       g <- theta["b2"] * exp(theta["b0"]) / theta["b1"]
       MRDT <- log((2 - 2 * g) / (1 - g * (exp(theta["b1"] * x) + 1))) /
         theta["b1"]
       ageDep <- TRUE
-    }
+    } 
     errMRDT <- 0
     iter <- 0
   } else if (shape == "Makeham") {
@@ -2120,6 +2207,11 @@ CalcAgeMaxFert <- function(beta, modelFert = "quadratic", ageMatur = 0,
     }
     dd <- 0
     ii <- 0
+  } else {
+    mxi <- .CalcFert(beta = beta, x = xv)
+    xm <- xv[which(mxi == max(mxi))[1]]
+    dd <- NA
+    ii <- NA
   }
   maxFert <- .CalcFert(beta, xm)
   maxFertv <- c(xm + ageMatur, maxFert, dd, ii, ageMatur)
