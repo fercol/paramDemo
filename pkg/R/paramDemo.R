@@ -68,7 +68,7 @@
     nTh <- 3
     nameTh <- c("b0", "b1", "b2")
     lowTh <- c(-Inf, 0, 0)
-  } else if (algObj$model == "GG") {
+  } else if (model == "GG") {
     nTh <- 3 
     nameTh <- c("b0", "b1", "b2")
     lowTh <- c(0, 1, 1)
