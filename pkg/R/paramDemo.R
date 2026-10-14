@@ -1764,8 +1764,8 @@ CalcLifeHist <- function(theta = NULL, beta = NULL,
     w <- (Sx * exp(-r * x)) / sum(Sx * exp(-r * x))
     
     # Reproductive value:
-    v <- rev(cumsum(rev(lam^(-xc) * Sxc * mxc * dxc)))
-    v <- lam^(xc) * v / Sxc
+    v <- rev(cumsum(rev(lambda^(-xc) * Sxc * mxc * dxc)))
+    v <- lambda^(xc) * v / Sxc
     v <- v[which(xc %in% x)]
     # v <- sapply(x, function(xx) {
     #   idsx <- which(xc >= xx)
